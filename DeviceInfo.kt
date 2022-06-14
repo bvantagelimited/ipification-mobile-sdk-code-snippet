@@ -28,12 +28,12 @@ class DeviceInfo {
                         SIMOperator(dataSimManager?.simOperator ?: "",  dataSimManager?.simCountryIso ?: "", dataSimManager?.simOperatorName ?: "")
                     }
                     else -> {
-                        SIMOperator( "",  "", "", errorMessage = "unsupported_os_version")
+                        SIMOperator("", "", "", errorMessage = "unsupported_os_version")
                     }
                 }
             }
         } catch (e: Exception){
-            return SIMOperator( "",  "", "", errorMessage = "error_exception: ${e.message}")
+            return SIMOperator("", "", "", errorMessage = "error_exception: ${e.message}")
         }
       }
       fun getSIM1(): SIMOperator {
@@ -53,7 +53,7 @@ class DeviceInfo {
                     val dataSimManager = subIds1.let { tm.createForSubscriptionId(it[0]) }
                     SIMOperator(dataSimManager?.simOperator ?: "",  dataSimManager?.simCountryIso ?: "", dataSimManager?.simOperatorName ?: "")
                 } else {
-                    SIMOperator( "",  "", "", errorMessage = "subIds1 is null")
+                    SIMOperator("", "", "", errorMessage = "subIds1 is null")
                 }
 
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -61,10 +61,10 @@ class DeviceInfo {
                 val dataSimManager = tm.createForSubscriptionId(dataSubId)
                 SIMOperator(dataSimManager?.simOperator ?: "",  dataSimManager?.simCountryIso ?: "", dataSimManager?.simOperatorName ?: "")
             } else {
-                SIMOperator( "",  "", "", errorMessage = "unsupported_os_version")
+                SIMOperator("", "", "", errorMessage = "unsupported_os_version")
             }
         } catch (e: Exception){
-            return SIMOperator( "" ,  "", "", errorMessage = "error_exception: ${e.message?.substring(0, 30)}")
+            return SIMOperator("" , "", "", errorMessage = "error_exception: ${e.message)}")
         }
     }
      
@@ -109,18 +109,18 @@ class DeviceInfo {
                             val dataSimManager = tm.createForSubscriptionId(secondId)
                             SIMOperator(dataSimManager?.simOperator ?: "",  dataSimManager?.simCountryIso ?: "", dataSimManager?.simOperatorName ?: "")
                         } else {
-                            SIMOperator( "",  "", "", errorMessage = "secondId is null")
+                            SIMOperator("", "", "", errorMessage = "secondId is null")
                         }
 
                     } else {
-                        SIMOperator( "",  "", "", errorMessage = "unsupported_os_version")
+                        SIMOperator("", "", "", errorMessage = "unsupported_os_version")
                     }
 
             } else {
-                SIMOperator( "",  "", "", errorMessage = "unsupported_os_version")
+                SIMOperator("", "", "", errorMessage = "unsupported_os_version")
             }
         } catch (e: Exception){
-            return SIMOperator( "" ,  "", "",errorMessage = "error_exception: ${e.message?.substring(0, 30)}")
+            return SIMOperator("" , "", "",errorMessage = "error_exception: ${e.message}")
         }
         
     }
