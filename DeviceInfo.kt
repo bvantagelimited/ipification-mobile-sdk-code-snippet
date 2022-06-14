@@ -86,6 +86,7 @@ class DeviceInfo {
                         }
 
                     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        // workaround solution to find out the 2nd SIM 
                         var dataSubId = SubscriptionManager.getDefaultDataSubscriptionId()
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
                             dataSubId = SubscriptionManager.getActiveDataSubscriptionId()
