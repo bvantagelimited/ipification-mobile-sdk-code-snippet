@@ -40,9 +40,6 @@ class DeviceInfo {
         val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         try {
             if(!isDualSim()){
-//                simCountryISO1 = tm.simCountryIso
-//                simOperatorName1 = tm.simOperatorName
-//                return tm.simOperator
                 return SIMOperator(tm.simOperator,  tm.simCountryIso ?: "", tm.simOperatorName ?: "")
             }
             else return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
