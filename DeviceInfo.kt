@@ -92,7 +92,6 @@ class DeviceInfo {
                         }
                         val smsSubId = SubscriptionManager.getDefaultSmsSubscriptionId()
                         val defaultId = SubscriptionManager.getDefaultSubscriptionId()
-                        val voidId = SubscriptionManager.getDefaultVoiceSubscriptionId()
 
                         var secondId = -1
                         when {
@@ -101,9 +100,6 @@ class DeviceInfo {
                             }
                             dataSubId != defaultId -> {
                                 secondId = defaultId
-                            }
-                            dataSubId != voidId -> {
-                                secondId = voidId
                             }
                         }
                         if (secondId != -1) {
