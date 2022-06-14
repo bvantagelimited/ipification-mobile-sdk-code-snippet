@@ -142,14 +142,14 @@ class DeviceInfo {
 
 
 class SIMOperator(private val simOperator: String, private val simCountryIso: String, private val simOperatorName : String, private val errorMessage: String = ""){
-    fun getMNC(): String{
+    fun getMNC(): String {
         return if (simOperator.length >= 3) {
             simOperator.substring(3)
         } else {
             ""
         }
     }
-    fun getMCC(): String{
+    fun getMCC(): String {
         return if (simOperator.length >= 3) {
             simOperator.substring(0, 3)
         } else {
