@@ -146,14 +146,14 @@ class SIMOperator(private val simOperator: String, private val simCountryIso: St
         return if (simOperator.length >= 3) {
             simOperator.substring(3)
         } else {
-            simOperator
+            ""
         }
     }
     fun getMCC(): String{
         return if (simOperator.length >= 3) {
             simOperator.substring(0, 3)
         } else {
-            simOperator
+            ""
         }
     }
     fun getSimOperatorStr(): String {
