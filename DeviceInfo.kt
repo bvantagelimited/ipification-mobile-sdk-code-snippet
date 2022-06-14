@@ -1,7 +1,6 @@
 class DeviceInfo {
     companion object Factory {
       
-      
       private fun getActiveDataSimOperator(): SIMOperator {
         try {
             val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
