@@ -1,7 +1,12 @@
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
+import android.content.Context
+import android.os.Build
+
 class DeviceInfo {
     companion object Factory {
       
-      private fun getActiveDataSimOperator(): SIMOperator {
+      private fun getActiveDataSimOperator(context: Context): SIMOperator {
         try {
             val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             return if(!isDualSim()){
@@ -35,7 +40,7 @@ class DeviceInfo {
             return SIMOperator("", "", "", errorMessage = "error_exception: ${e.message}")
         }
       }
-      fun getSIM1(): SIMOperator {
+      fun getSIM1(context: Context): SIMOperator {
         val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         try {
             if(!isDualSim()){
@@ -65,7 +70,7 @@ class DeviceInfo {
     }
      
     
-    fun getSIM2(): SIMOperator {
+    fun getSIM2(context: Context): SIMOperator {
         try {
             val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
             return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -121,7 +126,7 @@ class DeviceInfo {
         
     }
      // check if a device is Dual SIM 
-    fun isDualSim(): Boolean {
+    fun isDualSim(context: Context): Boolean {
       val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
       return when {
           Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
