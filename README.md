@@ -52,7 +52,7 @@ val manager = mContext.getSystemService(Context.CONNECTIVITY_SERVICE) as Connect
 manager.requestNetwork( builder.build(), mNetworkCallBack)
 ```
 
-More Detail here
+More Detail here:
 [Android_CellularConnection.kt](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/iOS_CellularConnection.swift)
 
 ## iOS
@@ -101,10 +101,7 @@ connection.start(queue: .main)
 ```
 
 
-More Detail here
-```
+More Detail here:
 [iOS_CellularConnection.swift](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/iOS_CellularConnection.swift)
-
-```
 
 <b>Enjoy exploring the app and feel free to leave <a href="https://github.com/contentful/the-example-app.kotlin/issues/new">feedback</a>.</b>
