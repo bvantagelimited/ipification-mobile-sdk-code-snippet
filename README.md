@@ -11,7 +11,7 @@ The following will allow Android applications using Android API 21 and above to 
 Android 5.0 (API 21) and up
 
 ### Permission
-```
+```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -20,21 +20,21 @@ Android 5.0 (API 21) and up
 OKHttp3 version 3 / 4. <br/>
 We use OKHttp3 because it support `socket` and target `DNS`
 
-```
+```groovy
 implementation 'com.squareup.okhttp3:okhttp:4.9.0'
 ```
 
 
-### Main Function
+### Core Function
 
 Here's a function that can simplify the action of preferring certain types of networks for your application
-```
+```kotlin
 val builder: NetworkRequest.Builder = NetworkRequest.Builder()
 builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
 builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
 ```
 After this you are able to get `onAvailable` callback from system and later you set process default network as mobile data.
-```
+```kotlin
 val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
@@ -47,10 +47,54 @@ val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     }
 }
 ```
-```
+```kotlin
 val manager = mContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 manager.requestNetwork( builder.build(), mNetworkCallBack)
 ```
 
 
+## iOS
+
+
+For iOS 12 and newer, we use `NetWork framework` to make network connection via cellular interface.
+
+For iOS under 12, we use `CocoaAsyncSocket (7.6.4)`. Because iOS under 12 doesn’t support an official API to force connection to cellular interface,  we need to do it manually by using a socket library to force requests to use cellular. 
+Then find the cellular interface from `getifaddrs`, pass that interface to the socket function, socket bind will happen with cellular. 
+
+### Core Function
+Using the following would be the correct approach to force the connection over cellular:
+
+```swift
+let tcpOptions = NWProtocolTCP.Options()
+let params = NWParameters(tls: enableTLS ? options : nil, tcp: tcpOptions)
+params.requiredInterfaceType = .cellular
+self.connection =  NWConnection.init(host:  host  , port: port, using: params)
+```
+After the connection moves into the `.ready` state and the connection is setup on pdp_ip0 (cell)
+```swift
+    connection.stateUpdateHandler = { (newState) in
+        print("TCP state change to: \(newState)")
+        switch newState {
+        case .ready:
+            print("ready")
+            // self.delegate!.didConnect(socket: self)
+            break
+        case .waiting(let error):
+            print("waiting error \(error.debugDescription ?? "")")
+            break
+
+        case .failed(let error):
+            print("failed \(error.debugDescription ?? "")")
+            // self.delegate?.didDisconnect(socket: self, error: error)
+            break
+        case .cancelled:
+            print("cancelled" )
+            break
+        default:
+            print("default")
+            break
+        }
+    }
+connection.start(queue: .main)
+```
 
