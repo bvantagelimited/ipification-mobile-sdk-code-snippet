@@ -1,1 +1,3 @@
-Code Snippet for Mobile 
+### Using Cellular Network for Phone Number Verification even when Wifi is on
+
+Using WiFi is more complicated when trying to use `IPification Authentication`. By default, all traffic on all operating systems will favor WiFi above cellular connections. However for IPification, the API request must be made using the cellular connection. We realize that users are unlikely to turn off WiFi and so the following code is provided for both iOS and Android to include in your applications that will allow a small payload to be delivered over the cellular interface, even when WiFi is connected. Telcos usually don’t charge (zero rate) our Authentication URLs so end users won’t have any cost.
