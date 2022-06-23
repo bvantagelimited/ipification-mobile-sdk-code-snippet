@@ -72,29 +72,29 @@ self.connection =  NWConnection.init(host:  host  , port: port, using: params)
 ```
 After the connection moves into the `.ready` state and the connection is setup on pdp_ip0 (cell)
 ```swift
-    connection.stateUpdateHandler = { (newState) in
-        print("TCP state change to: \(newState)")
-        switch newState {
-        case .ready:
-            print("ready")
-            // self.delegate!.didConnect(socket: self)
-            break
-        case .waiting(let error):
-            print("waiting error \(error.debugDescription ?? "")")
-            break
+connection.stateUpdateHandler = { (newState) in
+    print("TCP state change to: \(newState)")
+    switch newState {
+    case .ready:
+        print("ready")
+        // self.delegate!.didConnect(socket: self)
+        break
+    case .waiting(let error):
+        print("waiting error \(error.debugDescription ?? "")")
+        break
 
-        case .failed(let error):
-            print("failed \(error.debugDescription ?? "")")
-            // self.delegate?.didDisconnect(socket: self, error: error)
-            break
-        case .cancelled:
-            print("cancelled" )
-            break
-        default:
-            print("default")
-            break
-        }
+    case .failed(let error):
+        print("failed \(error.debugDescription ?? "")")
+        // self.delegate?.didDisconnect(socket: self, error: error)
+        break
+    case .cancelled:
+        print("cancelled" )
+        break
+    default:
+        print("default")
+        break
     }
+}
 connection.start(queue: .main)
 ```
 
