@@ -122,7 +122,7 @@ class DeviceInfo {
         }
         
     }
-     // check if a device is Dual SIM 
+     // check if a device is Dual SIM phone
     fun isDualSim(context: Context): Boolean {
       val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
       return when {
