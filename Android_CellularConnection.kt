@@ -42,7 +42,7 @@ class CellularTest {
                val dns = NetworkDns.instance
                dns.setNetwork(network)
                httpBuilder.dns(dns)
-
+                  
                val okHttpClient = httpBuilder.build()
                val mRequestBuilder = Request.Builder()
                    .url(url)
@@ -66,3 +66,74 @@ class CellularTest {
       )
    }
 }
+
+--------------------------
+NetworkDns.kt
+--------------------------
+import android.net.Network
+import android.os.Build
+import android.os.Build.VERSION_CODES
+import okhttp3.Dns
+import java.net.InetAddress
+import java.net.UnknownHostException
+
+
+class NetworkDns private constructor() : Dns {
+   private var mNetwork: Network? = null
+   fun setNetwork(network: Network?) {
+       mNetwork = network
+   }
+
+   @Throws(UnknownHostException::class)
+   override fun lookup(hostname: String): List<InetAddress> {
+       return if (mNetwork != null && Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+           listOf(*mNetwork!!.getAllByName(hostname))
+       } else Dns.SYSTEM.lookup(hostname)
+   }
+
+   companion object {
+       private var sInstance: NetworkDns? = null
+       val instance: NetworkDns
+           get() {
+               if (sInstance == null) {
+                   sInstance = NetworkDns()
+               }
+               return sInstance!!
+           }
+   }
+}
+
+
+
+--------------------------
+HandleRedirectInterceptor.kt (optional)
+--------------------------
+import android.content.Context
+import android.os.Build
+import android.util.Log
+import okhttp3.*
+import okhttp3.ResponseBody.Companion.toResponseBody
+
+class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: String) : Interceptor {
+    private var redirectUri: String = redirect_uri
+    private var url: String = requestUrl
+    private var deviceInfo: DeviceUtils = DeviceUtils(ctx)
+    private var bEnableCarrierHeader: Boolean = enableCarrierHeader == true
+    override fun intercept(chain: Interceptor.Chain): Response {
+
+        val request: Request = chain.request()
+        val response: Response = response = chain.proceed(request)
+        // check and return success response if location match with defined redirect-uri
+        if(response.code in 300.. 399 &&
+            (response.headers["location"] != null && response.headers["location"]!!.startsWith(redirectUri) || response.headers["Location"] != null && response.headers["Location"]!!.startsWith(redirectUri))){
+            val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+            val contentType: MediaType? = response.body!!.contentType()
+            val body = response.headers["location"]!!.toResponseBody(contentType)
+            builder.code(200).message("success").body(body)
+            return builder.build()
+        }
+        return response
+    }
+}
+
+
