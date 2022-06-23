@@ -17,7 +17,7 @@ Android 5.0 (API 21) and up
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
 ### Network 3rd Library:
-OKHttp3 version 3 / 4
+OKHttp3 version 3 / 4. <br/>
 We use OKHttp3 because it support `socket` and target `DNS`
 
 ```
@@ -25,7 +25,7 @@ implementation 'com.squareup.okhttp3:okhttp:4.9.0'
 ```
 
 
-### Sample Code
+### Main Function
 
 Here's a function that can simplify the action of preferring certain types of networks for your application
 ```
