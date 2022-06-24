@@ -29,7 +29,7 @@ internal class NetworkSocket {
     internal func performRequest(){
         
         host = endpoint!.host!
-        port = endpoint!.scheme == "http" ? 80 : 443
+        port = endpoint!.port ?? (endpoint!.scheme == "http" ? 80 : 443)
         do{
             try connectTo(host, port: port, enableTLS: port == 443, tlsSettings: nil)
         }catch{
