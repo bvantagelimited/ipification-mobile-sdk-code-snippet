@@ -18,7 +18,7 @@ Android 5.0 (API 21) and up
 ```
 ### Network 3rd Library:
 OKHttp3 version 3 / 4. <br/>
-We use OKHttp3 because it support `socket` and target `DNS`
+We use OKHttp3 because it supports `socket` and target `DNS`
 
 ```groovy
 implementation 'com.squareup.okhttp3:okhttp:4.9.0'
