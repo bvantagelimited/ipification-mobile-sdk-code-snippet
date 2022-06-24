@@ -16,7 +16,7 @@ Android 5.0 (API 21) and up
 <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 ```
-### Network 3rd Library:
+### Network 3rd Library
 OKHttp3 version 3 / 4. <br/>
 We use OKHttp3 because it supports `socket` and target `DNS`
 
@@ -33,7 +33,7 @@ val builder: NetworkRequest.Builder = NetworkRequest.Builder()
 builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
 builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
 ```
-After this you are able to get `onAvailable` callback from system and later you set process default network as mobile data.
+After this you are able to get `onAvailable()` callback from system and later you set process default network as mobile data.
 ```kotlin
 val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
@@ -53,7 +53,7 @@ manager.requestNetwork( builder.build(), mNetworkCallBack)
 ```
 
 More Detail here:
-[Android_CellularConnection.kt](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/iOS_CellularConnection.swift)
+[Android_CellularConnection.kt](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/Android_CellularConnection.kt)
 
 ## iOS
 
