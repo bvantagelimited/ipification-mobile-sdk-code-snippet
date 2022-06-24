@@ -5,7 +5,7 @@ Using WiFi is more complicated when trying to use `IPification Authentication`. 
 
 ## Android
 
-The following will allow Android applications using Android API 21 and above to use Cellular for the API request.
+The following will allow Android applications using Android API 21+ to use Cellular for the API request.
 
 ### Minimum Android 
 Android 5.0 (API 21) and up
