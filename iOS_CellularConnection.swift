@@ -129,7 +129,7 @@ internal class NetworkSocket {
     
     func readDataWithTag(_ tag: Int) {
         print("readDataWithTag")
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) {[weak self]  (data, ctx, yOrn, error) in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) {[weak self]  (data, ctx, isComplete, error) in
             guard let self = self else {return}
             guard let delegate = self.delegate else {return}
             if let error = error {
@@ -138,9 +138,15 @@ internal class NetworkSocket {
                 delegate.didDisconnect(socket: self, error: error)
             } else {
                 // Parse out body length
-                if let d = data {
-                    delegate.didReadData(d, withTag: tag, sock: self)
+                if datalength < self.previousByteLengh || datalength < 4096 {
+//                        NSLog("did receive, EOF")
+                    self.delegate?.didReadData(self.mData, withTag: tag, sock: self)
+                    self.stop()
+                    return
                 }
+                self.previousByteLengh = datalength
+                self.readDataWithTag(tag)
+
                 
             }
             
@@ -196,6 +202,7 @@ class NetworkDelegate{
         currentHost = endpoint.host!
         var path = endpoint.path != "" ? endpoint.path : "/"
         var query = endpoint.query != nil ? "?" + endpoint.query! : ""
+        
         let cookies = loadCookies(host: endpoint.host!, path: path)
         
         let body =  String(format: requestStrFrmt, path + query , loadHeaders(),
