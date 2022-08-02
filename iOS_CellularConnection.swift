@@ -5,7 +5,8 @@ Sample Code: NetworkSocket.swift
 @available(iOS 12.0, *)
 @available(iOSApplicationExtension 12.0, macOS 10.14 ,*)
 internal class NetworkSocket {
-    
+    var previousByteLengh = 0
+
     var host = ""
     var port:UInt16 = 443
     var receivedData: Bool = false
@@ -146,8 +147,6 @@ internal class NetworkSocket {
                 }
                 self.previousByteLengh = datalength
                 self.readDataWithTag(tag)
-
-                
             }
             
         }
