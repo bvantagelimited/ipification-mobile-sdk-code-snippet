@@ -15,6 +15,7 @@ Android 5.0 (API 21) and up
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 ```
 ### Network 3rd Library
 OKHttp3 version 3 / 4. <br/>
