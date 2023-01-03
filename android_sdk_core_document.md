@@ -108,7 +108,7 @@ class CellularConnection {
                     Log.e("TestAPI","cellular network is not available")
                 }
             }
-                , 5000 // CONNECT_NETWORK_TIMEOUT
+            , 5000 // CONNECT_NETWORK_TIMEOUT
             )
         }else{
             // manual adding timeout
