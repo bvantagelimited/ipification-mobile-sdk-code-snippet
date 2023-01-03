@@ -117,8 +117,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: String) : Interceptor {
     private var redirectUri: String = redirect_uri
     private var url: String = requestUrl
-    private var deviceInfo: DeviceUtils = DeviceUtils(ctx)
-    private var bEnableCarrierHeader: Boolean = enableCarrierHeader == true
+   
     override fun intercept(chain: Interceptor.Chain): Response {
 
         val request: Request = chain.request()
