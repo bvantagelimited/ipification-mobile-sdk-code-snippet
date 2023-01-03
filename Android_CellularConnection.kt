@@ -124,13 +124,16 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
         val request: Request = chain.request()
         val response: Response = response = chain.proceed(request)
         // check and return success response if location match with defined redirect-uri
-        if(response.code in 300.. 399 &&
-            (response.headers["location"] != null && response.headers["location"]!!.startsWith(redirectUri) || response.headers["Location"] != null && response.headers["Location"]!!.startsWith(redirectUri))){
-            val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
-            val contentType: MediaType? = response.body!!.contentType()
-            val body = response.headers["location"]!!.toResponseBody(contentType)
-            builder.code(200).message("success").body(body)
-            return builder.build()
+        if(response.code in 300.. 399){
+           if ((response.headers["location"] != null && response.headers["location"]!!.startsWith(redirectUri)) 
+                  || (response.headers["Location"] != null && response.headers["Location"]!!.startsWith(redirectUri)))
+               {
+                  val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+                  val contentType: MediaType? = response.body!!.contentType()
+                  val body = response.headers["location"]!!.toResponseBody(contentType)
+                  builder.code(200).message("success").body(body)
+                  return builder.build()
+               }
         }
         return response
     }
