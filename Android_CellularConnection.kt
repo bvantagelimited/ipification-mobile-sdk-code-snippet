@@ -129,9 +129,14 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
                {
                   val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
                   val contentType: MediaType? = response.body!!.contentType()
+                  
                   val locationRes = response.headers["location"] ?: response.headers["Location"] ?: ""
                   val body = locationRes.toResponseBody(contentType)
                   builder.code(200).message("success").body(body)
+                  
+                  // close the response body
+                  response.body?.close()
+                  
                   return builder.build()
                }
         }
