@@ -158,7 +158,7 @@ class CellularConnection {
         )
         )
 
-        // handle cookie
+        // handle cookie for multi redirect urls (for some special telcos)
         httpBuilder.cookieJar(cookieJar)
 
 
