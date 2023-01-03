@@ -209,7 +209,30 @@ class NetworkDns private constructor() : Dns {
    @Throws(UnknownHostException::class)
    override fun lookup(hostname: String): List<InetAddress> {
        return if (mNetwork != null && Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
-           listOf(*mNetwork!!.getAllByName(hostname))
+           try {
+                val inetAddressList: MutableList<InetAddress> = ArrayList()
+                val inetAddresses = mNetwork!!.getAllByName(hostname)
+                for (inetAddress in inetAddresses) {
+                    if (inetAddress is Inet4Address) {
+                        inetAddressList.add(0, inetAddress)
+                    } else {
+                        inetAddressList.add(inetAddress)
+                    }
+                }
+                inetAddressList
+            } catch (ex: NullPointerException) {
+                try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    Arrays.asList(*InetAddress.getAllByName(hostname))
+                }
+            } catch (ex: UnknownHostException) {
+                try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    Arrays.asList(*InetAddress.getAllByName(hostname))
+                }
+            }
        } else Dns.SYSTEM.lookup(hostname)
    }
 
