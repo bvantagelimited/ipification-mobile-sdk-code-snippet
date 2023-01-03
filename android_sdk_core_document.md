@@ -48,6 +48,24 @@ Response:
 ##### Check and create `Cellular Network` instance.
 
  ```
+import android.annotation.TargetApi
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.os.Build
+import android.util.Log
+import com.ipification.mobile.sdk.android.interceptor.HandleRedirectInterceptor
+import com.ipification.mobile.sdk.android.request.AuthRequest
+import com.ipification.mobile.sdk.android.utils.LogUtils
+import com.ipification.mobile.sdk.android.utils.NetworkUtils
+import com.ipification.mobile.sdk.android.utils.debug
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.util.*
+
 // Manifest.xml: required permission:  INTERNET, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_NETWORK_STATE, android:usesCleartextTraffic="true"
 // external library: OkHttp : com.squareup.okhttp3:okhttp 3.x or 4.x
 
@@ -57,11 +75,11 @@ class CellularConnection {
     fun performRequest(context: Context, authRequest: AuthRequest) {
         // wifi is OFF, DATA is ON -> request with current network interface
         if(NetworkUtils.isMobileDataEnabled(context) && !NetworkUtils.isWifiEnabled(context)){
-            processRequest(null, authRequest)
+            processRequest(context, null, authRequest)
         }else{
             requestCellularNetwork(context, authRequest)
         }
-    }    
+    }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun requestCellularNetwork(context: Context, authRequest: AuthRequest) {
@@ -75,55 +93,79 @@ class CellularConnection {
         // https://developer.android.com/reference/android/net/ConnectivityManager#requestNetwork(android.net.NetworkRequest,%20android.net.ConnectivityManager.NetworkCallback)
 
         val connectivityManager =
-            context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val request = NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
 
-        connectivityManager.requestNetwork(request, object : NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                processRequest(network, authRequest)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            connectivityManager.requestNetwork(request, object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    processRequest(context, network, authRequest)
+                }
+                override fun onUnavailable() {
+                    // cellular network is not available, callback
+                    Log.e("TestAPI","cellular network is not available")
+                }
             }
-            override fun onUnavailable() {
-                // cellular network is not available, callback
-                Log.e("TestAPI","cellular network is not available")
+                , 5000 // CONNECT_NETWORK_TIMEOUT
+            )
+        }else{
+            // manual adding timeout
+            connectivityManager.requestNetwork(request, object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    processRequest(context, network, authRequest)
+                }
+                override fun onUnavailable() {
+                    // cellular network is not available, callback
+                    Log.e("CellularConnection","cellular network is not available")
+                }
             }
+            )
+            Timer().schedule(object : TimerTask() {
+                override fun run() {
+//                    LogUtils.debug("timeout isReceiveResponse=${isReceiveResponse} ")
+//                    if (!isReceiveResponse) {
+//                        handleUnAvailableCase(cellularCallback)
+//                    }
+                }
+            }, 5000)
         }
-        , 5000 // CONNECT_NETWORK_TIMEOUT
-        )
     }
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun processRequest(network: Network?, authRequest: AuthRequest){
+    private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest){
         // using OkHTTP library to make the connection
-        var httpBuilder =
+        val httpBuilder =
             OkHttpClient.Builder()
         // add dns if needed
         if(network != null){
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
-            if(!isIPEndpoints(requestUri)){
+            if(!isIPEndpoints(authRequest.getUrl())){
                 // enable dns based on cellular network
-                val dns = NetworkDns.instance
+                val dns = NetworkDns.getInstance()
                 dns.setNetwork(network)
                 httpBuilder.dns(dns)
             }
         }
 
         //check and handle the response with redirect_uri
-        httpBuilder.addNetworkInterceptor(HandleRedirectInterceptor(
-                        context,
-                        authRequest.getUrl(),
-                        authRequest.mRedirectUri.toString()
-                    ))
+        httpBuilder.addNetworkInterceptor(
+            HandleRedirectInterceptor(
+            context,
+            authRequest.getUrl(),
+            authRequest.mRedirectUri.toString()
+        )
+        )
 
         // handle cookie
         httpBuilder.cookieJar(cookieJar)
 
-            
+
         val okHttpClient = httpBuilder.build()
         val mRequestBuilder = Request.Builder()
             .url(authRequest.getUrl())
-        
+
         try {
             val response: Response = okHttpClient.newCall(mRequestBuilder.build()).execute()
             Log.i(
@@ -194,6 +236,8 @@ import android.util.Log
 import okhttp3.*
 import okhttp3.ResponseBody.Companion.toResponseBody
 
+
+// OKHttp3 automatically follow Redirect by default. Just need to handle and return the result if the url is the same with the redirect_uri
 class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: String) : Interceptor {
     private var redirectUri: String = redirect_uri
     private var url: String = requestUrl
@@ -212,8 +256,7 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
                   
                   val locationRes = response.headers["location"] ?: response.headers["Location"] ?: ""
                   val body = locationRes.toResponseBody(contentType)
-                  builder.code(200).message("success").body(body)
-                  
+                  builder.code(200).message("success").body(body)                 
                   // close the response body to avoid exception
                   response.body?.close()
                   
@@ -229,7 +272,6 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 ```
 private val cookieJar: CookieJar = object : CookieJar {
     private val cookieStore: HashMap<String, ArrayList<Cookie>> = HashMap()
-
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
         val sameDomainCookies = cookieStore[url.host] ?: ArrayList()
         for(cookie in cookies){
@@ -237,19 +279,19 @@ private val cookieJar: CookieJar = object : CookieJar {
                 val pos = sameDomainCookies.indexOfFirst{
                     it.name == cookie.name
                 }
-                if(pos >= 0){
+                if(pos >= 0) {
                     sameDomainCookies[pos] = cookie
-                } else{
+                } else {
                     sameDomainCookies.add(cookie)
                 }
-            }else{ // save then check root domain
+            } else { // save then check root domain
                 val dmCookies = cookieStore[cookie.domain] ?: ArrayList()
                 val pos = dmCookies.indexOfFirst{
                     it.name == cookie.name && it.domain == cookie.domain
                 }
-                if(pos >= 0){
+                if(pos >= 0) {
                     dmCookies[pos] = cookie
-                } else{
+                } else {
                     dmCookies.add(cookie)
                 }
                 cookieStore[cookie.domain] = dmCookies
@@ -260,7 +302,6 @@ private val cookieJar: CookieJar = object : CookieJar {
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
         val cookies = cookieStore[url.topPrivateDomain()]  ?: ArrayList()
-        
         if(cookieStore[url.topPrivateDomain()] != null){
             val dmCookies = cookieStore[url.topPrivateDomain()]!!
             val validPathCookies = ArrayList<Cookie>()
