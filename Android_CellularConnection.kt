@@ -106,7 +106,7 @@ class NetworkDns private constructor() : Dns {
 
 
 --------------------------
-HandleRedirectInterceptor.kt (optional)
+HandleRedirectInterceptor.kt (need to implement in case handling redirect urls)
 --------------------------
 import android.content.Context
 import android.os.Build
