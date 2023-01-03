@@ -13,7 +13,7 @@ import okhttp3.*
 
 class CellularTest {
 
-   // required permission:  INTERNET, CHANGE_NETWORK_STATE
+   // required permission:  INTERNET, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_NETWORK_STATE
    // external library: OkHttp : com.squareup.okhttp3:okhttp
 
    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
