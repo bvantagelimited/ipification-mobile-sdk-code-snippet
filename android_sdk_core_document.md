@@ -48,7 +48,9 @@ Response:
 ## Android Code Snippet
 
  ```
+ 
 import android.annotation.TargetApi
+
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -74,9 +76,9 @@ class CellularConnection {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     fun performRequest(context: Context, authRequest: AuthRequest) {
         // wifi is OFF, DATA is ON -> request with current network interface
-        if(NetworkUtils.isMobileDataEnabled(context) && !NetworkUtils.isWifiEnabled(context)){
+        if (NetworkUtils.isMobileDataEnabled(context) && !NetworkUtils.isWifiEnabled(context)) {
             processRequest(context, null, authRequest)
-        }else{
+        } else {
             requestCellularNetwork(context, authRequest)
         }
     }
@@ -84,7 +86,7 @@ class CellularConnection {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun requestCellularNetwork(context: Context, authRequest: AuthRequest) {
         // 1. force network connection via cellular interface
-        // If your app supports Android 21+, you need to implement handling timeout manually.     
+        // If your app supports Android 21+, you need to implement handling timeout manually.
         // Android 21++ support requestNetwork (NetworkRequest request,
         //                ConnectivityManager.NetworkCallback networkCallback)
         // Android 26++ support requestNetwork(NetworkRequest request,
@@ -99,28 +101,34 @@ class CellularConnection {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            connectivityManager.requestNetwork(request, object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    processRequest(context, network, authRequest)
-                }
-                override fun onUnavailable() {
-                    // cellular network is not available, callback
-                    Log.e("TestAPI","cellular network is not available")
-                }
-            }
-            , 5000 // CONNECT_NETWORK_TIMEOUT
+            connectivityManager.requestNetwork(
+                request,
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        processRequest(context, network, authRequest)
+                    }
+
+                    override fun onUnavailable() {
+                        // cellular network is not available, callback
+                        Log.e("TestAPI", "cellular network is not available")
+                    }
+                },
+                5000 // CONNECT_NETWORK_TIMEOUT
             )
-        }else{
+        } else {
             // manual adding timeout
-            connectivityManager.requestNetwork(request, object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    processRequest(context, network, authRequest)
+            connectivityManager.requestNetwork(
+                request,
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        processRequest(context, network, authRequest)
+                    }
+
+                    override fun onUnavailable() {
+                        // cellular network is not available, callback
+                        Log.e("CellularConnection", "cellular network is not available")
+                    }
                 }
-                override fun onUnavailable() {
-                    // cellular network is not available, callback
-                    Log.e("CellularConnection","cellular network is not available")
-                }
-            }
             )
             Timer().schedule(object : TimerTask() {
                 override fun run() {
@@ -132,18 +140,19 @@ class CellularConnection {
             }, 5000)
         }
     }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest){
+    private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest) {
         // using OkHTTP library to make the connection
         val httpBuilder =
             OkHttpClient.Builder()
         // add dns if needed
-        if(network != null){
+        if (network != null) {
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
-            if(!isIPEndpoints(authRequest.getUrl())){
+            if (!isIPEndpoints(authRequest.getUrl())) {
                 // enable dns based on cellular network
-                val dns = NetworkDns.getInstance()
+                val dns = NetworkDns.instance
                 dns.setNetwork(network)
                 httpBuilder.dns(dns)
             }
@@ -152,13 +161,13 @@ class CellularConnection {
         //check and handle the response with redirect_uri
         httpBuilder.addNetworkInterceptor(
             HandleRedirectInterceptor(
-            context,
-            authRequest.getUrl(),
-            authRequest.mRedirectUri.toString()
-        )
+                context,
+                authRequest.getUrl(),
+                authRequest.mRedirectUri.toString()
+            )
         )
 
-        // handle cookie for multi redirect urls (for some special telcos)
+        // handle cookie
         httpBuilder.cookieJar(cookieJar)
 
 
