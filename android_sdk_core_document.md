@@ -7,9 +7,11 @@ Main Flow of Mobile SDK :
 *   Check and create `Cellular Network` instance.
 *   Prepare the `authorization request` with required parameters
 *   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`
-*   Receive a response with: (1) - result directly via `redirect_uri` or (2) - redirection url (`301` or `302`)
-*   (1) - Parser the response then return the result to client
-*   (2) - Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
+*   Receive a response with: 
+    *   result directly via `redirect_uri` (1) or 
+    *   redirection url (`301` or `302`) (2)
+*   (1) -> Parser the response then return the result to client
+*   (2) -> Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
 
 **Note:** All requests need to be performed via `cellular network`.
 
@@ -43,9 +45,7 @@ Response:
 | consent_timestamp (optional) | The time stamp when consent was accepted by end user. Accepted format is UNIX time stamp in seconds. |
 
 
-## Android
-
-##### Check and create `Cellular Network` instance.
+## Android Code Snippet
 
  ```
 import android.annotation.TargetApi
@@ -191,6 +191,7 @@ class CellularConnection {
  ```
  --------------------------
 NetworkDns.kt
+Use this class to implement DNS. Should use the cellular network to resolve the IP of the hostname (in wifi case). Prior ipv4 over ipv6
 --------------------------
 import android.net.Network
 import android.os.Build
@@ -252,7 +253,10 @@ class NetworkDns private constructor() : Dns {
 ```
 --------------------------
 HandleRedirectInterceptor.kt (need to implement in case handling redirect urls)
+
+By default,OKHttp3 automatically follow Redirect (followSslRedirects(true),followRedirects(true)). We just need to check and return the response if the location url starts with the `redirect_uri`
 --------------------------
+
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -260,7 +264,7 @@ import okhttp3.*
 import okhttp3.ResponseBody.Companion.toResponseBody
 
 
-// OKHttp3 automatically follow Redirect by default. Just need to handle and return the result if the url is the same with the redirect_uri
+
 class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: String) : Interceptor {
     private var redirectUri: String = redirect_uri
     private var url: String = requestUrl
@@ -293,6 +297,11 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 ```
 
 ```
+--------------------------
+CookieJar (need to implement in case handling redirect urls)
+
+Some special telcos (UK, RU) validate request cookies in their redirection flow. So we need to implement cookie manager to handle it
+--------------------------
 private val cookieJar: CookieJar = object : CookieJar {
     private val cookieStore: HashMap<String, ArrayList<Cookie>> = HashMap()
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
