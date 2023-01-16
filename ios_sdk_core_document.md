@@ -80,7 +80,6 @@ NetworkSocket.swift
 --------------------------
 import Foundation
 import Network
-import NetworkExtension
 
 @available(iOS 12.0, *)
 @available(iOSApplicationExtension 12.0, macOS 10.14 ,*)
