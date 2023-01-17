@@ -138,7 +138,6 @@ internal class NetworkSocket: RawSocketProtocol {
    
     // main function to perform Auth request
     func performDoAuthorization() {
-        // Deprecated - check cellular enable / disable
         self.performRequest()
     }
     
