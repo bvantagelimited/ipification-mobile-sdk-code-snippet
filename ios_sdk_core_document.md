@@ -168,11 +168,7 @@ internal class NetworkSocket: RawSocketProtocol {
         
         let params = NWParameters(tls: enableTLS ? options : nil, tcp: tcpOptions)
         
-        // https://github.com/bvantagelimited/ipification-ios-sdk/issues/20
-        let (is3GOn) =  ConnectionManager.checkOnly3G()
-        if(is3GOn){
-            params.requiredInterfaceType = .cellular
-        }
+        params.requiredInterfaceType = .cellular
         
         self.connection =  NWConnection.init(host:  h  , port: p!, using: params)
         
