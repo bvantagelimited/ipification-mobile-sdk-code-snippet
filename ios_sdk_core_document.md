@@ -2,6 +2,7 @@
 
 This document describes the IPification iOS SDK and its usage. The main purpose of the SDK is to provide network-based authentication for mobile users.
 
+**Minimum iOS required** : iOS 12
 
 Main Flow of iOS SDK : 
 *   Prepare the `authorization request` with required parameters
