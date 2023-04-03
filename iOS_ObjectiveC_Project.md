@@ -48,15 +48,17 @@ For example:
 ```
    @objc
    public class AuthorizationService: NSObject {
-   public override init() {
-   }
-   @objc
-   public var callbackFailed: ((_ response: IPificationException) -> Void)?
-   @objc
-   public var callbackSuccess: ((_ response: AuthorizationResponse) -> Void)?
+      public override init() {
+      }
+      @objc
+      public var callbackFailed: ((_ response: IPificationException) -> Void)?
+      @objc
+      public var callbackSuccess: ((_ response: AuthorizationResponse) -> Void)?
 
-   @objc
-   public func startAuthorization(_ authRequest : AuthorizationRequest? = nil){
+      @objc
+      public func startAuthorization(_ authRequest : AuthorizationRequest? = nil){
+      ...
+      }
    }
 ```
 
