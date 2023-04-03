@@ -1,9 +1,12 @@
 
 # iOS SDK Changes to work with Objective-C Project
+
 -------------
 
 This document describes how to update the IPification iOS SDK and use it in the  Project.
+
 -------------
+
 **Minimum iOS required** : iOS 12
 
 Main Flow of iOS SDK : 
