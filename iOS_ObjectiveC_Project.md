@@ -27,7 +27,7 @@ The first time you add a Swift file to an Objective-C project, this dialogue box
 #### 2. Import the Header
 At **Target > Build Settings > Swift Compiler — General > Objective-C Generated Interface Header Name**, you can find the ${SWIFT_MODULE_NAME}-Swift.h header file name, which will be used to import the Swift class in your Objective-C file.
 
-Words before -Swift.h is your Product Module Name, able to find under Target/Build Settings/All/Packaging.
+Words before -Swift.h is your Product Module Name, able to find under **Target/Build Settings/All/Packaging**.
 
 
 
@@ -54,7 +54,9 @@ Now you can use the Swift classes and methods in your Objective-C code.
 To call a Swift method from Objective-C, use the syntax **[<Swift class name> <method name>]**. 
 For example, if you have a Swift class named "MySwiftClass" with a method named "mySwiftMethod", you can call it from Objective-C like this:
 
+```
 [[MySwiftClass new] mySwiftMethod];
+```
 
 That's it! With these steps, you should be able to integrate Swift classes into your Objective-C project.
 
