@@ -1,9 +1,9 @@
 
-# iOS SDK Changes to work with Objective-C Project
+# iOS SDK - Compatibility with Objective-C projects 
 
 -------------
 
-This document describes how to update the IPification iOS SDK and use it in the  Project.
+This document describes how to update the IPification iOS source code and use it in the Objective-C Project.
 
 -------------
 
@@ -23,10 +23,10 @@ Main Flow of iOS SDK :
 
 
 ## Guideline
-To integrate IPification Swift SDK into an Objective-C project, follow these steps:
+To integrate IPification Swift swift source code into an Objective-C project, follow these steps:
 
 #### 1. Create a Bridging Header by Xcode
-The first time you add a Swift file to an Objective-C project, this dialogue box will appear, asking if you would like to create a bridging header. Make sure you click Create Bridging Header, then Xcode will configure everything for you.
+The first time you add a Swift file to an Objective-C project, this dialogue box will appear, asking if you would like to create a bridging header. Make sure you click **Create Bridging Header**, then Xcode will configure everything for you.
 ![1__YzY57TicD2SRKWufUnCQg](https://user-images.githubusercontent.com/4114159/229404627-82b06cd0-5430-4471-a49a-cecc56bfb9f5.png)
 
 #### 2. Import the Header
@@ -38,12 +38,14 @@ Words before -Swift.h is your Product Module Name, able to find under **Target/B
 
 
 
-#### 3. Modify Swift Code 
+#### 3. Modifying Swift classes and functions 
 ```
 By default, the generated header contains interfaces for Swift declarations marked with the `public` or `open` modifier. If your app target has an Objective-C bridging header, the generated header also includes interfaces marked with the internal modifier. Declarations marked with the `private` or `fileprivate` modifier don’t appear in the generated header, and aren’t exposed to the Objective-C runtime unless they are explicitly marked with a `@objc` attribute.
 ```
+
 - Classes extends `NSObject` and that is annotated with `@objc`, satisfying all the requirements to be used in `Objective-C`.
 - All usage functions need to be annotated with `@objc`
+
 For example:
 ```
    @objc
