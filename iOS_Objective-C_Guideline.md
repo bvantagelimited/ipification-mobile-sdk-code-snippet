@@ -98,7 +98,7 @@ For example:
         // error, fallback to another auth service flow
         NSLog(@"Coverage error: %@", [error localizedDescription]);
     }];
-    [coverageService checkCoverageWithPhoneNumberWithPhone:@"9991234567890" :nil];
+    [coverageService checkCoverageWithPhoneNumberWithPhone:@"999123456789" :nil];
 
     
     // Do Authentication
