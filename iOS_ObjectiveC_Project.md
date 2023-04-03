@@ -52,10 +52,22 @@ This header file name might not pop up like other available header files do when
 Now you can use the Swift classes and methods in your Objective-C code.
 
 To call a Swift method from Objective-C, use the syntax **[<Swift class name> <method name>]**. 
-For example, if you have a Swift class named "MySwiftClass" with a method named "mySwiftMethod", you can call it from Objective-C like this:
+For example:
 
 ```
-[[MySwiftClass new] mySwiftMethod];
+   AuthorizationService *authorizationService = [[AuthorizationService alloc] init];
+   [authorizationService setCallbackSuccess:^(AuthorizationResponse *response) {
+      // Handle successful response here
+      NSLog(@"Authorization success: %@", [response getCode]);
+   }];
+
+
+   AuthorizationRequestBuilder *authBuilder = [[AuthorizationRequestBuilder alloc] init];
+   [authBuilder setScopeWithValue:@"openid ip:phone_verify"];
+   [authBuilder addQueryParamWithKey:@"login_hint" value: @"381123456789"];
+   AuthorizationRequest *authRequest = [authBuilder build];
+   [authorizationService startAuthorization:authRequest];
+
 ```
 
 That's it! With these steps, you should be able to integrate Swift classes into your Objective-C project.
