@@ -23,7 +23,7 @@ Main Flow of iOS SDK :
 
 
 ## Guideline
-To integrate IPification Swift swift source code into an Objective-C project, follow these steps:
+To integrate IPification Swift source code into an Objective-C project, follow these steps:
 
 #### 1. Create a Bridging Header by Xcode
 The first time you add a Swift file to an Objective-C project, this dialogue box will appear, asking if you would like to create a bridging header. Make sure you click **Create Bridging Header**, then Xcode will configure everything for you.
@@ -64,7 +64,7 @@ For example:
 ```
 
 
-#### 3. Usage
+#### 4. Usage
 Within the Objective-C code file where you want to access your Swift class, use this syntax to import it:
 
 ```
