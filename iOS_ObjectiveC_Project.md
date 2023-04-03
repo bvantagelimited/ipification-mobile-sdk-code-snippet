@@ -1,8 +1,9 @@
 
 # iOS SDK Changes to work with Objective-C Project
+-------------
 
 This document describes how to update the IPification iOS SDK and use it in the  Project.
-
+-------------
 **Minimum iOS required** : iOS 12
 
 Main Flow of iOS SDK : 
@@ -18,7 +19,7 @@ Main Flow of iOS SDK :
 
 
 
-## General
+## Guideline
 To integrate IPification Swift SDK into an Objective-C project, follow these steps:
 
 #### 1. Create a Bridging Header by Xcode
