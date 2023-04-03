@@ -57,7 +57,7 @@ For example:
 
       @objc
       public func startAuthorization(_ authRequest : AuthorizationRequest? = nil){
-      ...
+       ...
       }
    }
 ```
