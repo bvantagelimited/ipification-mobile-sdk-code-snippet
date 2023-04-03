@@ -44,6 +44,21 @@ By default, the generated header contains interfaces for Swift declarations mark
 ```
 - Classes extends `NSObject` and that is annotated with `@objc`, satisfying all the requirements to be used in `Objective-C`.
 - All usage functions need to be annotated with `@objc`
+For example:
+```
+   @objc
+   public class AuthorizationService: NSObject {
+   public override init() {
+   }
+   @objc
+   public var callbackFailed: ((_ response: IPificationException) -> Void)?
+   @objc
+   public var callbackSuccess: ((_ response: AuthorizationResponse) -> Void)?
+
+   @objc
+   public func startAuthorization(_ authRequest : AuthorizationRequest? = nil){
+   }
+```
 
 
 #### 3. Usage
