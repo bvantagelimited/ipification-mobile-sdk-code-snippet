@@ -27,9 +27,12 @@ To integrate IPification Swift SDK into an Objective-C project, follow these ste
 
 #### 1. Create a Bridging Header by Xcode
 The first time you add a Swift file to an Objective-C project, this dialogue box will appear, asking if you would like to create a bridging header. Make sure you click Create Bridging Header, then Xcode will configure everything for you.
+![1__YzY57TicD2SRKWufUnCQg](https://user-images.githubusercontent.com/4114159/229404627-82b06cd0-5430-4471-a49a-cecc56bfb9f5.png)
 
 #### 2. Import the Header
 At **Target > Build Settings > Swift Compiler — General > Objective-C Generated Interface Header Name**, you can find the ${SWIFT_MODULE_NAME}-Swift.h header file name, which will be used to import the Swift class in your Objective-C file.
+
+![1_SD9_Mf8uLZT1uqi0XrqsrA](https://user-images.githubusercontent.com/4114159/229404691-88bfc015-14f6-4933-90e6-0fc8f11c3b78.png)
 
 Words before -Swift.h is your Product Module Name, able to find under **Target/Build Settings/All/Packaging**.
 
