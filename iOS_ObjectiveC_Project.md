@@ -62,18 +62,43 @@ To call a Swift method from Objective-C, use the syntax **[<Swift class name> <m
 For example:
 
 ```
-   AuthorizationService *authorizationService = [[AuthorizationService alloc] init];
-   [authorizationService setCallbackSuccess:^(AuthorizationResponse *response) {
-      // Handle successful response here
-      NSLog(@"Authorization success: %@", [response getCode]);
-   }];
+    // Init
+    [IPConfiguration sharedInstance].ENV = IPEnvironmentPRODUCTION; //   IPEnvironmentSANDBOX
+    [IPConfiguration sharedInstance].CLIENT_ID = @"your-prod-client-id";
+    [IPConfiguration sharedInstance].REDIRECT_URI = @"your-prod-redirect-uri";
 
+    // CheckCoverage
+    CoverageService *coverageService = [[CoverageService alloc] init];
+    [coverageService setCallbackSuccess:^(CoverageResponse *response) {
+        if([response isAvailable]){
+            // supported Telco. Call Authorization API
+        }else{
+            // unsupported Telco, fallback to another auth service flow
+        }
+    }];
+    [coverageService setCallbackFailed:^(IPificationException *error) {
+        // error, fallback to another auth service flow
+        NSLog(@"Coverage error: %@", [error localizedDescription]);
+    }];
+    [coverageService checkCoverageWithPhoneNumberWithPhone:@"123-456-7890" :nil];
 
-   AuthorizationRequestBuilder *authBuilder = [[AuthorizationRequestBuilder alloc] init];
-   [authBuilder setScopeWithValue:@"openid ip:phone_verify"];
-   [authBuilder addQueryParamWithKey:@"login_hint" value: @"381123456789"];
-   AuthorizationRequest *authRequest = [authBuilder build];
-   [authorizationService startAuthorization:authRequest];
+    
+    // Do Authentication
+    AuthorizationService *authorizationService = [[AuthorizationService alloc] init];
+    [authorizationService setCallbackSuccess:^(AuthorizationResponse *response) {
+        // Handle successful response here
+        NSLog(@"Authorization success: %@", [response getCode]);
+    }];
+    [authorizationService setCallbackFailed:^(IPificationException *error) {
+        // error, fallback to another auth service flow
+        NSLog(@"Authorization error: %@", [error localizedDescription]);
+    }];
+ 
+    AuthorizationRequestBuilder *authBuilder = [[AuthorizationRequestBuilder alloc] init];
+    [authBuilder setScopeWithValue:@"openid ip:phone_verify"];
+    [authBuilder addQueryParamWithKey:@"login_hint" value: @"999123456789"];
+    AuthorizationRequest *authRequest = [authBuilder build];
+    [authorizationService startAuthorization:authRequest];
 
 ```
 
