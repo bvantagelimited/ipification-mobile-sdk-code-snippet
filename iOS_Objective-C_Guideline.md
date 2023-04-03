@@ -39,9 +39,8 @@ Words before -Swift.h is your Product Module Name, able to find under **Target/B
 
 
 #### 3. Modifying Swift classes and functions 
-```
-By default, the generated header contains interfaces for Swift declarations marked with the `public` or `open` modifier. If your app target has an Objective-C bridging header, the generated header also includes interfaces marked with the internal modifier. Declarations marked with the `private` or `fileprivate` modifier don’t appear in the generated header, and aren’t exposed to the Objective-C runtime unless they are explicitly marked with a `@objc` attribute.
-```
+
+``` By default, the generated header contains interfaces for Swift declarations marked with the `public` or `open` modifier. If your app target has an Objective-C bridging header, the generated header also includes interfaces marked with the internal modifier. Declarations marked with the `private` or `fileprivate` modifier don’t appear in the generated header, and aren’t exposed to the Objective-C runtime unless they are explicitly marked with a `@objc` attribute. ```
 
 - Classes extends `NSObject` and that is annotated with `@objc`, satisfying all the requirements to be used in `Objective-C`.
 - All usage functions need to be annotated with `@objc`
