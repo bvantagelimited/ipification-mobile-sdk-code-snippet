@@ -3,6 +3,7 @@ import Foundation
 import UIKit
 import CoreTelephony
 
+//deprecated
 class DeviceInfo {
     
     public static func activeMNC() -> String {
