@@ -469,13 +469,7 @@ class IPificationCoreService {
     
     public func continueRequest(url: String){
         // clear Data
-        self.mData = Data()
-        self.isConnectReady = 0
-        self.isNetworkError = false
-        self.receivedData = 0
-        self.previousByteLengh = 0
-        
-        
+        resetData()
         // check and process URL
         var covertedUrl = url
         if(isEscaped(str: url) == false){
