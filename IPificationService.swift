@@ -2,8 +2,8 @@
 //  IPificationService.swift
 //  IPificationSDK-Demo
 //
-//  Created by Nguyen Huu Tinh on 29/02/2024.
-//  Copyright © 2024 Nguyen Huu Tinh. All rights reserved.
+//  Created by IPification on 29/02/2024.
+//  Copyright © 2024 IPification. All rights reserved.
 //
 
 import Foundation
