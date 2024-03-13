@@ -8,7 +8,6 @@
 
 import Foundation
 import Network
-import CoreTelephony
 
 enum RequestType {
     case coverage
