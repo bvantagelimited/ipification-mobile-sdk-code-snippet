@@ -55,3 +55,35 @@ IPConfiguration.getInstance().currentState = IPConfiguration.getInstance().gener
 IPConfiguration.getInstance().IM_PRIORITY_APP_LIST = arrayOf("wa", "telegram", "viber")
 
 IMServices.startAuthentication(this@activity, callback)
+
+```
+
+## Handling Authentication Result
+
+To properly handle the authentication result in your activity, ensure you override the `onNewIntent()` and `onResume()` methods and call `IMServices.checkAndFinishSession()` within them.
+
+### `onNewIntent()` Method
+
+Override the `onNewIntent()` and `onResume()` methods in your activity. 
+
+```kotlin
+override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    // Set flag indicating new intent received
+    onNewIntent = true
+    // Call method to handle session check
+    IMServices.checkAndFinishSession()
+}
+
+override fun onResume() {
+    super.onResume()
+    // Check if activity was launched from a new intent
+    if (!onNewIntent) {
+        // If not, call method to handle session check
+        IMServices.checkAndFinishSession()
+    }
+    // Reset flag indicating new intent
+    onNewIntent = false
+}
+```
+
