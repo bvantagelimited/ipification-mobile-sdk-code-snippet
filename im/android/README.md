@@ -62,8 +62,6 @@ IMServices.startAuthentication(this@activity, callback)
 
 To properly handle the authentication result in your activity, ensure you override the `onNewIntent()` and `onResume()` methods and call `IMServices.checkAndFinishSession()` within them.
 
-### `onNewIntent()` Method
-
 Override the `onNewIntent()` and `onResume()` methods in your activity. 
 
 ```kotlin
