@@ -43,7 +43,6 @@ class IMServices {
         /**
         * Perform IPification Authorization
         * @param context: Context
-        * @param state: String
         * @param callback: IPificationCallback
         */
 
