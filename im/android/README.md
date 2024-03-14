@@ -12,6 +12,31 @@ The provided code snippet demonstrates how to initiate the authentication proces
 The code snippet initializes the IPification AUTH API with the required configuration and starts the authentication process. It also defines callbacks to handle authentication success, failure, and when the user opens the IM app.
 
 ## Instructions for Use
+### Manifest Configuration
+
+In your `AndroidManifest.xml` file, make sure to add the following attributes to the activity declaration:
+
+```xml
+<activity
+    android:name=".YourIMLoginActivity"
+    android:launchMode="singleInstance"
+    android:windowSoftInputMode="adjustPan">
+    <!-- Other activity attributes and configurations -->
+</activity>
+```
+Adding `android:launchMode="singleInstance"` ensures that the activity is launched as a single instance, while `android:windowSoftInputMode="adjustPan"` adjusts the pan of the window to make room for the input method (soft keyboard).
+
+Additionally, include the following `<queries>` section to declare the packages required for your app to query IM apps:
+
+```xml
+<queries>
+    <package android:name="org.telegram.messenger" />
+    <package android:name="org.telegram.messenger.web" />
+    <package android:name="com.whatsapp" />
+    <package android:name="com.viber.voip" />
+</queries>
+```
+
 
 1. **Set Up IPification Configuration**:
    - Set the IPification environment to `SANDBOX`.
