@@ -43,7 +43,7 @@ class IMServices {
         /**
         * Perform IPification Authorization
         * @param activity: Activity
-        * @param callback: IPificationCallback
+        * @param callback: VerifyCompleteListener
         */
 
         fun startAuthentication(
