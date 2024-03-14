@@ -39,17 +39,17 @@ Additionally, include the following `<queries>` section to declare the packages 
 
 
 1. **Set Up IPification Configuration**:
-   - Set the IPification environment to `SANDBOX`.
-   - Set your `CLIENT_ID`.
-   - Define your `REDIRECT_URI`.
-   - Generate a state using `generateState()` method.
-   - Define the priority app list for IM authentication.
-   - AUTOMODE IS ON (as always)
+    - AUTOMODE IS ON (as always)
+    - Set the IPification environment to `SANDBOX` or `PRODUCTION`.
+    - Set your `CLIENT_ID`.
+    - Define your `REDIRECT_URI`.
+    - [Optional] Generate a state using `generateState()` method.
+    - Define the priority app list for IM authentication.
 
-2. **Define Authentication Callbacks**:
+3. **Define Authentication Callbacks**:
    - Define callbacks to handle authentication success, failure, and when the user opens the IM app.
 
-3. **Start Authentication**:
+4. **Start Authentication**:
    - Call `startAuthentication()` method from `IMServices` with the provided callback.
 
 ## Usage Example
