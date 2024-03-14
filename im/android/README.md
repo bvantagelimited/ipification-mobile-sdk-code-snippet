@@ -33,7 +33,7 @@ The code snippet initializes the IPification AUTH API with the required configur
 val callback = object : VerifyCompleteListener {
     override fun onSuccess(state: String) {
         Log.d("DemoActivity", "state:$state")
-        // TODO: Call your backend with state to check the auth result
+        // TODO: Call your backend with {state} to check the auth result
     }
 
     override fun onFail(error: String) {
@@ -48,8 +48,10 @@ val callback = object : VerifyCompleteListener {
 }
 
 IPConfiguration.getInstance().ENV = IPEnvironment.SANDBOX
-IPConfiguration.getInstance().CLIENT_ID = "6f2026a683bc439ebb414a03f9012f27"
-IPConfiguration.getInstance().REDIRECT_URI = Uri.parse("https://test.ipification.com/auth")
+IPConfiguration.getInstance().CLIENT_ID = "your-client-id"
+IPConfiguration.getInstance().REDIRECT_URI = Uri.parse("your-redirect-uri")
+
 IPConfiguration.getInstance().currentState = IPConfiguration.getInstance().generateState()
-IPConfiguration.getInstance().IM_PRIORITY_APP_LIST = arrayOf("wa", "telegram")
-IMServices.startAuthentication(this, callback)
+IPConfiguration.getInstance().IM_PRIORITY_APP_LIST = arrayOf("wa", "telegram", "viber")
+
+IMServices.startAuthentication(this@activity, callback)
