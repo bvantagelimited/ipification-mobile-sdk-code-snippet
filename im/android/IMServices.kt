@@ -42,7 +42,7 @@ class IMServices {
         }
         /**
         * Perform IPification Authorization
-        * @param context: Context
+        * @param activity: Activity
         * @param callback: IPificationCallback
         */
 
