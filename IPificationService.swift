@@ -30,7 +30,7 @@ class IPificationService {
         let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
         ipservice.onSuccess = { (response) -> Void in
             print("IP COVERAGE - FINAL SUCCESS RESPONSE:", response)
-            self.performAuth()
+            self.performAuth(clientID: clientID, redirectUri: redirectUri, phoneNumber: phoneNumber)
         }
         ipservice.onError = { (error) -> Void in
             print("IP COVERAGE - FINAL ERROR RESPONSE:", error)
@@ -44,10 +44,29 @@ class IPificationService {
             print("Missing credentials for authentication.")
             return
         }
-        let IP_AUTH_URL = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
+        let authURLString = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
 
         let randomState = randomString(length: 16)
         
+        
+        guard var urlComponents = URLComponents(string: authURLString) else {
+            print("Invalid auth URL.")
+            return
+        }
+
+        urlComponents.queryItems = [
+                URLQueryItem(name: "response_type", value: "code"),
+                URLQueryItem(name: "client_id", value: clientID),
+                URLQueryItem(name: "redirect_uri", value: redirectUri),
+                URLQueryItem(name: "scope", value: "openid ip:phone_verify"),
+                URLQueryItem(name: "state", value: randomState),
+                URLQueryItem(name: "login_hint", value: phoneNumber)
+            ]
+        
+        guard let urlAuthString = urlComponents.url?.absoluteString else {
+                print("Failed to create URL from components.")
+                return
+            }
         
         // Create an instance of IPificationCoreService and connect to the auth URL
         let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
@@ -58,10 +77,10 @@ class IPificationService {
         }
         ipservice.onError = { (error) -> Void in
             print("IP AUTH - FINAL ERROR RESPONSE:", error)
-            //TODO failed, call send sms function
+            //TODO failed, call to send sms function
         }
-        ipservice.connectTo(urlString: "\(IP_AUTH_URL)?response_type=code&client_id=\(clientID)&redirect_uri=\(redirectUri)&scope=openid ip:phone_verify&state=\(randomState)&login_hint=\(phoneNumber)"
-, requestType: .auth)
+       
+        ipservice.connectTo(urlString: urlAuthString, requestType: .auth)
     }
     
     //util
