@@ -18,13 +18,14 @@ enum RequestType {
 
 class IPificationService {
     
-    func performCheckCoverage() {
-        // TODO: update as your credential
-        let clientID = ""
-        let redirectUri = ""
-        let phoneNumber = "381123456789"
+    func performCheckCoverage(clientID: String, redirectUri: String, phoneNumber: String) {
+        guard !clientID.isEmpty, !redirectUri.isEmpty, !phoneNumber.isEmpty else {
+            print("Missing credentials for coverage check.")
+            return
+        }
         
-        
+        let coverageURLString = "https://api.ipification.com/auth/realms/ipification/coverage"
+
         // Create an instance of IPificationCoreService and connect to the coverage URL
         let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
         ipservice.onSuccess = { (response) -> Void in
@@ -33,16 +34,18 @@ class IPificationService {
         }
         ipservice.onError = { (error) -> Void in
             print("IP COVERAGE - FINAL ERROR RESPONSE:", error)
-            self.performAuth()
+            //TODO failed, call send sms function
         }
-        ipservice.connectTo(urlString: "https://api.ipification.com/auth/realms/ipification/coverage?client_id=\(clientID)&phone=\(phoneNumber)", requestType: .coverage)
+        ipservice.connectTo(urlString: "\(coverageURLString)?client_id=\(clientID)&phone=\(phoneNumber)", requestType: .coverage)
     }
     
-    func performAuth(){
-        // TODO: update as your credential
-        let clientID = ""
-        let redirectUri = ""
-        let phoneNumber = "381123456789"
+    func performAuth(clientID: String, redirectUri: String, phoneNumber: String) {
+        guard !clientID.isEmpty, !redirectUri.isEmpty, !phoneNumber.isEmpty else {
+            print("Missing credentials for authentication.")
+            return
+        }
+        let IP_AUTH_URL = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
+
         let randomState = randomString(length: 16)
         
         
@@ -55,8 +58,9 @@ class IPificationService {
         }
         ipservice.onError = { (error) -> Void in
             print("IP AUTH - FINAL ERROR RESPONSE:", error)
+            //TODO failed, call send sms function
         }
-        ipservice.connectTo(urlString: "https://stage.ipification.com/auth/realms/ipification/protocol/openid-connect/auth?response_type=code&client_id=\(clientID)&redirect_uri=\(redirectUri)&scope=openid ip:phone_verify&state=\(randomState)&login_hint=\(phoneNumber)"
+        ipservice.connectTo(urlString: "\(IP_AUTH_URL)?response_type=code&client_id=\(clientID)&redirect_uri=\(redirectUri)&scope=openid ip:phone_verify&state=\(randomState)&login_hint=\(phoneNumber)"
 , requestType: .auth)
     }
     
