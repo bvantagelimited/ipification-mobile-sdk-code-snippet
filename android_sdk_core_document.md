@@ -167,6 +167,9 @@ class CellularConnection {
             )
         )
 
+        // disable retry connection
+        httpBuilder.retryOnConnectionFailure(false)
+
         // handle cookie
         httpBuilder.cookieJar(cookieJar)
 
