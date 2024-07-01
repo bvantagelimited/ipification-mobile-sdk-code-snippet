@@ -9,18 +9,21 @@
 import Foundation
 import Network
 
+// Enum to define the type of request being made
 enum RequestType {
     case coverage
     case auth
     case redirect
 }
 
-
 class IPificationService {
     
+    // Function to check coverage with provided credentials
     func performCheckCoverage(clientID: String, redirectUri: String, phoneNumber: String) {
+        // Ensure all required parameters are provided
         guard !clientID.isEmpty, !redirectUri.isEmpty, !phoneNumber.isEmpty else {
             print("Missing credentials for coverage check.")
+            //TODO handle error
             return
         }
         
@@ -30,75 +33,83 @@ class IPificationService {
         let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
         ipservice.onSuccess = { (response) -> Void in
             print("IP COVERAGE - FINAL SUCCESS RESPONSE:", response)
+            // Proceed to authentication upon successful coverage check
             self.performAuth(clientID: clientID, redirectUri: redirectUri, phoneNumber: phoneNumber)
         }
         ipservice.onError = { (error) -> Void in
             print("IP COVERAGE - FINAL ERROR RESPONSE:", error)
-            //TODO failed, call send sms function
+            // TODO: Handle error, possibly by sending an SMS
         }
         ipservice.connectTo(urlString: "\(coverageURLString)?client_id=\(clientID)&phone=\(phoneNumber)", requestType: .coverage)
     }
     
+    // Function to perform authentication with provided credentials
     func performAuth(clientID: String, redirectUri: String, phoneNumber: String) {
+        // Ensure all required parameters are provided
         guard !clientID.isEmpty, !redirectUri.isEmpty, !phoneNumber.isEmpty else {
             print("Missing credentials for authentication.")
+            //TODO handle error
             return
         }
         let authURLString = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
 
+        // Generate a random state string for security
         let randomState = randomString(length: 16)
         
-        
+        // Build the URL components for the authentication request
         guard var urlComponents = URLComponents(string: authURLString) else {
             print("Invalid auth URL.")
+            //TODO handle error
             return
         }
 
         urlComponents.queryItems = [
-                URLQueryItem(name: "response_type", value: "code"),
-                URLQueryItem(name: "client_id", value: clientID),
-                URLQueryItem(name: "redirect_uri", value: redirectUri),
-                URLQueryItem(name: "scope", value: "openid ip:phone_verify"),
-                URLQueryItem(name: "state", value: randomState),
-                URLQueryItem(name: "login_hint", value: phoneNumber)
-            ]
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "client_id", value: clientID),
+            URLQueryItem(name: "redirect_uri", value: redirectUri),
+            URLQueryItem(name: "scope", value: "openid ip:phone_verify"),
+            URLQueryItem(name: "state", value: randomState),
+            URLQueryItem(name: "login_hint", value: phoneNumber)
+        ]
         
         guard let urlAuthString = urlComponents.url?.absoluteString else {
-                print("Failed to create URL from components.")
-                return
-            }
+            print("Failed to create URL from components.")
+            //TODO handle error
+            return
+        }
         
         // Create an instance of IPificationCoreService and connect to the auth URL
         let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
         ipservice.onSuccess = { (response) -> Void in
             print("IP AUTH - FINAL SUCCESS RESPONSE:", response)
+            // Extract the authorization code from the response
             let code = self.getParamValue(key: "code", response: response)
             print("code", code ?? "empty")
         }
         ipservice.onError = { (error) -> Void in
             print("IP AUTH - FINAL ERROR RESPONSE:", error)
-            //TODO failed, call to send sms function
+            // TODO: Handle error, possibly by sending an SMS
         }
        
         ipservice.connectTo(urlString: urlAuthString, requestType: .auth)
     }
     
-    //util
+    // Utility function to generate a random string of specified length
     func randomString(length: Int) -> String {
         let prefix = "ip-sdk-"
         let remainingLength = max(0, length - prefix.count)
         let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         let randomLetters = String((0..<remainingLength).map { _ in letters.randomElement()! })
         return prefix + randomLetters
-
     }
-    // util
+
+    // Utility function to extract a parameter value from a URL query string
     private func getParamValue(key: String, response: String) -> String? {
         // Parse the URL string
         if let url = URL(string: response) {
             // Extract query parameters
             if let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems {
-                // Search for the "code" parameter
+                // Search for the specified key in the query parameters
                 for queryItem in queryItems {
                     if queryItem.name == key {
                         return queryItem.value
@@ -126,7 +137,7 @@ class IPificationCoreService {
     public var onSuccess: ((_ response: String) -> Void)?
     public var onError: ((_ error: String) -> Void)?
 
-    
+    // Initialize the core service with the redirect URI
     init(REDIRECT_URI: String) {
         self.REDIRECT_URI = REDIRECT_URI
         self.mData = Data()
@@ -136,10 +147,12 @@ class IPificationCoreService {
         self.previousByteLengh = 0
     }
     
+    // Function to connect to a specified URL
     public func connectTo(urlString: String, requestType: RequestType) {
-        // init data
+        // Initialize data
         self.requestType = requestType
         
+        // Ensure success and error callbacks are set
         if(self.onSuccess == nil){
             print("please register callback")
             return
@@ -200,7 +213,6 @@ class IPificationCoreService {
                 print("ready")
                 self.isConnectReady = 1
                 self.didConnect(socket: self, url: url)
-                break
             case .waiting(let error):
                 print("waiting error \(error.debugDescription)")
                 self.isConnectReady = -1
@@ -208,25 +220,20 @@ class IPificationCoreService {
                     print("network error")
                     self.receivedData = 1
                     self.errorNetwork(error.debugDescription)
-                }else{
+                } else {
                     self.didDisconnect(socket: self, error: error.debugDescription)
                 }
                 self.socketDisconnect(becauseOf: error)
-                break
-            
             case .failed(let error):
                 self.isConnectReady = -1
                 print("failed \(error.debugDescription)")
                 self.didDisconnect(socket: self, error: error.localizedDescription)
                 self.socketDisconnect(becauseOf: error)
-                break
             case .cancelled:
                 self.isConnectReady = -1
-                print("cancelled" )
-                break
+                print("cancelled")
             case .setup:
                 print("setup")
-                break
             case .preparing:
                 print("preparing")
                 DispatchQueue.main.asyncAfter(deadline: .now() + (self.TIMEOUT / 1000)) {
@@ -237,18 +244,16 @@ class IPificationCoreService {
                         self.cancelConnection()
                     }
                 }
-                break
             default:
                 print("default")
-                break
             }
         }
         connection.start(queue: .main)
     }
     
-    
+    // Function called when the connection is successfully established
     private func didConnect(socket: IPificationCoreService, url: URL){
-        print("didConnect!");
+        print("didConnect!")
         
         print( "host" , url.host!)
         let host = url.host!
@@ -257,13 +262,14 @@ class IPificationCoreService {
         let query = url.query != nil ? "?" + url.query! : ""
         print( "query" , query)
         
-        let body =  String(format: requestStrFrmt, path + query , "", "", host);
+        // Format the HTTP request
+        let body =  String(format: requestStrFrmt, path + query , "", "", host)
         print(body)
                 
         socket.writeData(body.data(using: .utf8)!, withTag: 1)
         socket.readDataWithTag(1)
         
-
+        // Set a timeout for the connection
         DispatchQueue.main.asyncAfter(deadline: .now() + TIMEOUT / 1000) {
             if(self.receivedData == 0 && self.isNetworkError == false){
                 self.receivedData = -1
@@ -272,9 +278,9 @@ class IPificationCoreService {
                 socket.connection.cancel()
             }
         }
-
     }
     
+    // Function to disconnect the socket due to an error
     private func socketDisconnect(becauseOf error: Error?) {
         print("disconnect \(error?.localizedDescription ?? "")")
         if connection != nil && connection.state != .cancelled {
@@ -282,26 +288,28 @@ class IPificationCoreService {
         }
     }
     
+    // Function called when the socket is disconnected
     private func didDisconnect(socket sock: IPificationCoreService, error err: String?) {
-        
         if(receivedData == 0 && isNetworkError == false){
             receivedData = -1
             onError?("Cannot connect to server")
-        }else{
+        } else {
             print("socketDidDisconnect!")
         }
-        
     }
+
+    // Function to handle network errors
     func errorNetwork(_ error: String){
         isNetworkError = true
         onError?("CELLULAR IS NOT ACTIVE (\(error))")
-
     }
     
+    // Function to cancel the connection
     func cancelConnection() {
         self.connection.cancel()
     }
     
+    // Function to send data over the connection
     func writeData(_ data: Data, withTag: Int) {
         print("writeData")
         connection.send(content: data, completion: .contentProcessed({[weak self] (sendError) in
@@ -313,12 +321,13 @@ class IPificationCoreService {
                 }
                 // TODO: Handle error, maybe call a completion handler with an error
                 self.didDisconnect(socket: self, error: sendError.localizedDescription)
-            }else {
+            } else {
                 print("didWriteData")
             }
         }))
     }
     
+    // Function to read data from the connection
     func readDataWithTag(_ tag: Int) {
         print("readDataWithTag")
         connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) {(data, contentContext, isComplete, error) in
@@ -344,12 +353,12 @@ class IPificationCoreService {
                     }
                     self.previousByteLengh = datalength
                     self.readDataWithTag(tag)
-
                 }
             }
         }
     }
     
+    // Function called when data is successfully read
     func didReadData(_ data: Data, withTag: Int) {
         let str = String(decoding: data, as: UTF8.self)
         let components = str.components(separatedBy: "\r\n\r\n")
@@ -363,7 +372,7 @@ class IPificationCoreService {
                 if let statusCode = Int(statusCodeString) {
                     switch statusCode {
                     case 300..<400:
-                        // Redirect status 3xx
+                        // Handle redirect status (3xx)
                         let lines = headers.components(separatedBy: "\r\n")
                         var locationHeader: String?
                         for line in lines {
@@ -388,13 +397,13 @@ class IPificationCoreService {
                                             let res = array[0].replacingOccurrences(of:"HTTP/1.1", with: "")
                                             if(res.isEmpty){
                                                 error = array[1]
-                                            }else{
+                                            } else {
                                                 error = res
                                             }
-                                        }else{
+                                        } else {
                                             error = str
                                         }
-                                    } else{
+                                    } else {
                                         error = result
                                     }
                                     onError?(error)
@@ -410,25 +419,25 @@ class IPificationCoreService {
                             onError?("\(statusCode ) but Invalid or missing redirect URL \(headers)")
                         }
                     case 200:
+                        // Handle success status (200)
                         if(requestType == .coverage){
                             let result = components.count > 1 ? components[1] : ""
                             if(result.contains("available") == true){
                                 if(self.isCoverageAvailable(response: result) == true){
                                     onSuccess?(result)
-                                }
-                                else{
+                                } else {
                                     onError?("available = false. telco is not supported")
                                 }
-                            } else{
+                            } else {
                                 onError?(result)
                             }
-                        }else{
+                        } else {
                             // Success status 200
                             let result = components.count > 1 ? components[1] : ""
                             onSuccess?(result)
                         }
                     default:
-                        // Error status
+                        // Handle other error statuses
                         let result = components.count > 1 ? components[1] : ""
                         var error = "something went wrong"
                         if(result.isEmpty) {
@@ -460,11 +469,12 @@ class IPificationCoreService {
         }
     }
     
+    // Function to check if coverage is available in the response
     private func isCoverageAvailable(response: String) -> Bool{
         let data =  Data(response.utf8)
         
         do {
-            // make sure this JSON is in the format we expect
+            // Ensure the JSON is in the expected format
             if let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any] {
                 return json["available"] as? Bool ?? false
             }
@@ -474,6 +484,7 @@ class IPificationCoreService {
         return false
     }
     
+    // Function to extract the authorization code from the response URL
     public func getCode(response: String) -> String? {
         // Parse the URL string
         if let url = URL(string: response) {
@@ -490,10 +501,11 @@ class IPificationCoreService {
         return nil
     }
     
+    // Function to continue the request with a new URL (e.g., after a redirect)
     public func continueRequest(url: String){
-        // clear Data
+        // Clear data
         resetData()
-        // check and process URL
+        // Check and process URL
         var covertedUrl = url
         if(isEscaped(str: url) == false){
             covertedUrl = url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? url
@@ -501,9 +513,12 @@ class IPificationCoreService {
         connectTo(urlString: covertedUrl, requestType: .redirect)
     }
     
+    // Function to check if a string is percent-encoded
     func isEscaped(str: String) -> Bool {
         return str.removingPercentEncoding != str
     }
+    
+    // Function to reset connection data
     private func resetData(){
         self.mData = Data()
         self.isConnectReady = 0
@@ -511,5 +526,4 @@ class IPificationCoreService {
         self.receivedData = 0
         self.previousByteLengh = 0
     }
-    
 }
