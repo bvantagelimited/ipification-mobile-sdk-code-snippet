@@ -153,28 +153,27 @@ class IPificationCoreService {
         self.requestType = requestType
         
         // Ensure success and error callbacks are set
-        if(self.onSuccess == nil){
-            print("please register callback")
+        if self.onSuccess == nil {
+            print("Error: Success callback is not registered. Please register a success callback before proceeding.")
             return
         }
-        if(self.onError == nil){
-            print("please register callback")
+        if self.onError == nil {
+            print("Error: Error callback is not registered. Please register an error callback before proceeding.")
             return
         }
-        if(REDIRECT_URI.isEmpty){
-            print("please register callback")
-            // TODO: Handle error, maybe call a completion handler with an error
-            onError?("redirect_uri is invalid")
+        if REDIRECT_URI.isEmpty {
+            print("Error: The REDIRECT_URI is invalid or empty. Please provide a valid redirect URI.")
+            onError?("The REDIRECT_URI is invalid or empty. Please provide a valid redirect URI.")
             return
         }
         // Parse the URL
         guard let url = URL(string: urlString) else {
             // Handle invalid URL
-            print("Invalid URL")
-            // TODO: Handle error, maybe call a completion handler with an error
-            onError?("url is invalid")
+            print("Error: The provided URL string is invalid. Please check the URL format and try again.")
+            onError?("The provided URL string is invalid. Please check the URL format and try again.")
             return
         }
+
 
         // Extract host and port
         guard let hostString = url.host else {
@@ -254,8 +253,8 @@ class IPificationCoreService {
     // Function called when the connection is successfully established
     private func didConnect(socket: IPificationCoreService, url: URL){
         print("didConnect!")
-        
         print( "host" , url.host!)
+        
         let host = url.host!
         let path = url.path != "" ? url.path : "/"
         print( "path" , path)
@@ -301,7 +300,7 @@ class IPificationCoreService {
     // Function to handle network errors
     func errorNetwork(_ error: String){
         isNetworkError = true
-        onError?("CELLULAR IS NOT ACTIVE (\(error))")
+        onError?("CELLULAR NETWORK IS NOT ACTIVE (\(error))")
     }
     
     // Function to cancel the connection
