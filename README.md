@@ -103,6 +103,5 @@ connection.start(queue: .main)
 
 
 More Detail here:
-[iOS_CellularConnection.swift](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/iOS_CellularConnection.swift)
-
+https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md
 ---
