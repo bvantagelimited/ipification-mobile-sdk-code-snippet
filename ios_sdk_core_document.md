@@ -6,8 +6,14 @@ This document describes the IPification iOS SDK and its usage. The main purpose 
 **Minimum iOS required** : iOS 12
 
 Main Flow of iOS SDK : 
+
+1. Check Coverage
+* Call the Coverage API with the client's `phone` number (GET) through the Cellular Network .
+* Receive a response with: `is_available`- `true`: supported | `false`: not supported
+
+2. Start Authentication 
 *   Prepare the `authorization request` with required parameters
-*   Call Authorization API with `authorization request` ( GET ) through `Cellular Network` (use Network Framework)
+*   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`.
 *   Receive a response with: 
     *   result directly via `redirect_uri` (1) or 
     *   redirection url (`301` or `302`) (2)
@@ -44,6 +50,9 @@ Response:
 |mnc (optional) | Mobile Network Code |
 | consent_id (optional) | Unique ID for the consent that is traceable if consent audit is required. Value will be provided if needed in integration process. |
 | consent_timestamp (optional) | The time stamp when consent was accepted by end user. Accepted format is UNIX time stamp in seconds. |
+
+
+For more detail, please check our developer document: https://developer.ipification.com/#/ios/latest/
 
 
 ## iOS Code Snippet
