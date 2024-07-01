@@ -101,7 +101,5 @@ connection.stateUpdateHandler = { (newState) in
 connection.start(queue: .main)
 ```
 
-
-More Detail here:
-https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md
+#### More Detail here: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md
 ---
