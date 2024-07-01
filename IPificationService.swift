@@ -30,17 +30,17 @@ class IPificationService {
         let coverageURLString = "https://api.ipification.com/auth/realms/ipification/coverage"
 
         // Create an instance of IPificationCoreService and connect to the coverage URL
-        let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
-        ipservice.onSuccess = { (response) -> Void in
+        let ipService = IPificationCoreService(REDIRECT_URI: redirectUri)
+        ipService.onSuccess = { (response) -> Void in
             print("IP COVERAGE - FINAL SUCCESS RESPONSE:", response)
             // Proceed to authentication upon successful coverage check
             self.performAuth(clientID: clientID, redirectUri: redirectUri, phoneNumber: phoneNumber)
         }
-        ipservice.onError = { (error) -> Void in
+        ipService.onError = { (error) -> Void in
             print("IP COVERAGE - FINAL ERROR RESPONSE:", error)
             // TODO: Handle error, possibly by sending an SMS
         }
-        ipservice.connectTo(urlString: "\(coverageURLString)?client_id=\(clientID)&phone=\(phoneNumber)", requestType: .coverage)
+        ipService.connectTo(urlString: "\(coverageURLString)?client_id=\(clientID)&phone=\(phoneNumber)", requestType: .coverage)
     }
     
     // Function to perform authentication with provided credentials
