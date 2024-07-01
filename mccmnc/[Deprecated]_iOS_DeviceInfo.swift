@@ -3,7 +3,13 @@ import Foundation
 import UIKit
 import CoreTelephony
 
-//deprecated
+//
+// Note: This solution is DEPRECATED
+// The CTCarrier API is deprecated and returns static values for apps that are built with the iOS 16.4 SDK or later. 
+// For more details, please refer to the official documentation:
+// https://developer.apple.com/documentation/ios-ipados-release-notes/ios-ipados-16_4-release-notes
+//
+
 class DeviceInfo {
     
     public static func activeMNC() -> String {
