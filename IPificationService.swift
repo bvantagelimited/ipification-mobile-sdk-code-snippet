@@ -381,7 +381,7 @@ class IPificationCoreService {
                             }
                         }
                         if let locationHeader = locationHeader, locationHeader.starts(with: "http") && !locationHeader.starts(with: REDIRECT_URI) {
-                            // TODO: Call redirect request with locationHeader
+                            // Call Redirect Request with locationHeader
                             continueRequest(url: locationHeader)
                         }
                         else if let locationHeader = locationHeader, locationHeader.starts(with: REDIRECT_URI) {
@@ -431,7 +431,7 @@ class IPificationCoreService {
                                 onError?(result)
                             }
                         } else {
-                            // Success status 200
+                            // return success status 200 for other type
                             let result = components.count > 1 ? components[1] : ""
                             onSuccess?(result)
                         }
@@ -441,7 +441,6 @@ class IPificationCoreService {
                         var error = "something went wrong"
                         if(result.isEmpty) {
                             let array = str.components(separatedBy: "\r\n")
-                            
                             if(array.count > 1) {
                                 let res = array[0].replacingOccurrences(of:"HTTP/1.1", with: "")
                                 if(res.isEmpty) {
@@ -471,7 +470,6 @@ class IPificationCoreService {
     // Function to check if coverage is available in the response
     private func isCoverageAvailable(response: String) -> Bool{
         let data =  Data(response.utf8)
-        
         do {
             // Ensure the JSON is in the expected format
             if let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any] {
