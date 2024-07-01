@@ -16,6 +16,8 @@ enum RequestType {
     case redirect
 }
 
+@available(iOS 12.0, *)
+@available(iOSApplicationExtension 12.0, macOS 10.14 ,*)
 class IPificationService {
     
     // Function to check coverage with provided credentials
