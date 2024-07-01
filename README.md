@@ -54,7 +54,7 @@ manager.requestNetwork( builder.build(), mNetworkCallBack)
 ```
 
 More Detail here:
-[Android_CellularConnection.kt](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/Android_CellularConnection.kt)
+[Android Document](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_sdk_core_document.md)
 
 ## iOS
 
@@ -101,5 +101,6 @@ connection.stateUpdateHandler = { (newState) in
 connection.start(queue: .main)
 ```
 
-#### More Detail here: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md
+More Detail here: [iOS Document](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md)
+
 ---
