@@ -79,19 +79,19 @@ class IPificationService {
         }
         
         // Create an instance of IPificationCoreService and connect to the auth URL
-        let ipservice = IPificationCoreService(REDIRECT_URI: redirectUri)
-        ipservice.onSuccess = { (response) -> Void in
+        let ipService = IPificationCoreService(REDIRECT_URI: redirectUri)
+        ipService.onSuccess = { (response) -> Void in
             print("IP AUTH - FINAL SUCCESS RESPONSE:", response)
             // Extract the authorization code from the response
             let code = self.getParamValue(key: "code", response: response)
             print("code", code ?? "empty")
         }
-        ipservice.onError = { (error) -> Void in
+        ipService.onError = { (error) -> Void in
             print("IP AUTH - FINAL ERROR RESPONSE:", error)
             // TODO: Handle error, possibly by sending an SMS
         }
        
-        ipservice.connectTo(urlString: urlAuthString, requestType: .auth)
+        ipService.connectTo(urlString: urlAuthString, requestType: .auth)
     }
     
     // Utility function to generate a random string of specified length
