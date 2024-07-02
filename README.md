@@ -20,10 +20,10 @@ Android 5.0 (API 21) and up
 ```
 ### Network 3rd Library
 OKHttp3 version 3 / 4. <br/>
-We use OKHttp3 because it supports `socket` and target `DNS`
+> We use OKHttp3 because it supports binding to the cellular network via socket and targeting DNS.
 
 ```groovy
-implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+implementation 'com.squareup.okhttp3:okhttp:4.9.3'
 ```
 
 
@@ -35,11 +35,13 @@ val builder: NetworkRequest.Builder = NetworkRequest.Builder()
 builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
 builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
 ```
+
 After this you are able to get `onAvailable()` callback from system and later you set process default network as mobile data.
 ```kotlin
 val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
+        // TODO: process the connection via this network
     }
     override fun onUnavailable() {
         super.onUnavailable()
