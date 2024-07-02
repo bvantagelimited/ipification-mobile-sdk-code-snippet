@@ -56,7 +56,7 @@ For more detail, please check our developer document: https://developer.ipificat
 
 
 ## iOS Code Snippet
-https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/iOS_IPificationService.swift
+https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_IPificationService.swift
 
 ### License
 
