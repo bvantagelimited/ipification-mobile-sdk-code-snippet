@@ -149,11 +149,10 @@ class CellularConnection {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest) {
-        // using OkHTTP library to make the connection
-        val httpBuilder =
-            OkHttpClient.Builder()
-        // add dns if needed
-        if (network != null) {
+         // using OkHTTP library to make the connection
+         val httpBuilder =OkHttpClient.Builder()
+         // add dns if needed
+         if (network != null) {
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
             // enable DNS resolver with cellularnetwork
@@ -163,43 +162,42 @@ class CellularConnection {
                 dns.setNetwork(network)
                 httpBuilder.dns(dns)
             }
-        }
-
-        //check and handle the response with redirect_uri
-        httpBuilder.addNetworkInterceptor(
+         }
+         
+         //check and handle the response with redirect_uri
+         httpBuilder.addNetworkInterceptor(
             HandleRedirectInterceptor(
                 context,
                 authRequest.getUrl(),
                 authRequest.mRedirectUri.toString()
             )
-        )
+         )
+         
+         // disable retry connection
+         httpBuilder.retryOnConnectionFailure(false)
+         
+         // handle cookie (optional)
+         httpBuilder.cookieJar(cookieJar)
+         
+         val httpClient = httpBuilder.build()
 
-        // disable retry connection
-        httpBuilder.retryOnConnectionFailure(false)
-
-        // handle cookie (optional)
-        httpBuilder.cookieJar(cookieJar)
-
-
-        val okHttpClient = httpBuilder.build()
-        val mRequestBuilder = Request.Builder()
-            .url(authRequest.getUrl())
-
-        try {
-            httpClient.newCall(okHttpRequest).enqueue(object : Callback {
-               override fun onResponse(call: Call, response: Response) {
-                   // handle the response
-                  Log.i("CellularConnection", "callAPIonCellularNetwork RESULT:${response.body?.string()}")
-               }
-   
-               override fun onFailure(call: Call, e: IOException) {
-                  e.printStackTrace()
-               }
-           })
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            Log.e("CellularConnection", ex.message!!)
-        }
+         val okHttpRequestBuilder = Request.Builder()
+         //url
+         okHttpRequestBuilder.url(authRequest.getUrl())
+         
+         val okHttpRequest: Request = okHttpRequestBuilder
+            .build()        
+         httpClient.newCall(okHttpRequest).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                // handle the response
+               Log.i("CellularConnection", "callAPIonCellularNetwork RESULT:${response.body?.string()}")
+            }
+            
+            override fun onFailure(call: Call, e: IOException) {
+               e.printStackTrace()
+            }
+         })
+        
     }
 
     // minor functions
