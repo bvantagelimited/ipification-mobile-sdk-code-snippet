@@ -39,15 +39,15 @@ import java.util.concurrent.TimeUnit
 
 
 /**
- * IPificationServices class handles the network requests for coverage and authentication.
+ * IPificationService class handles the network requests for coverage and authentication.
  * It constructs the necessary URLs with the required parameters and makes requests to the IPification API.
  * The class includes functions to perform coverage requests and authentication requests.
  * It also includes helper functions to construct URLs, generate random states, and extract parameters from responses.
  */
-class IPificationServices {
+class IPificationService {
     private var coverageRequesting: Boolean = false
     private var authRequesting: Boolean = false
-    private val TAG: String = "IPificationServices"
+    private val TAG: String = "IPificationService"
     val environment = "stage" // or "live"
 
     // performRequest determines the network request handling logic based on network status
