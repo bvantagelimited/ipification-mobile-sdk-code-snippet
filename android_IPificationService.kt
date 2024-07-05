@@ -757,10 +757,7 @@ class DefaultConnection() : AsyncTask<Unit, Unit, ResponseBody?>() {
                 }
             }
             if(httpClient.responseCode in 300..310){
-                var locationUrl = httpClient.getHeaderField("Location")
-                if (locationUrl == null){
-                    locationUrl = httpClient.getHeaderField("location")
-                }
+                val locationUrl = httpClient.getHeaderField("Location") ?: httpClient.getHeaderField("location")
                 return ResponseBody(locationUrl, httpClient.headerFields)
             }
             return ResponseBody("${httpClient.responseCode} - ${httpClient.responseMessage}", httpClient.headerFields)
