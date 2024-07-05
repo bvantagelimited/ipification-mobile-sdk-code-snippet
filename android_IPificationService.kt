@@ -63,7 +63,7 @@ class IPificationService {
     private val TAG: String = "IPificationService"
     var environment = "live" // or "live"
     var log = ""
-    // performRequest determines the network request handling logic based on network status
+    // Check Coverage to see if the phone number and active telco are supported or not.
     fun performCoverageRequest(
         context: Context,
         env: String,
@@ -128,7 +128,8 @@ class IPificationService {
             }
         })
     }
-
+    
+    // perform authentication
     fun performAuthenticationRequest(
         context: Context,
         phoneNumber: String,
