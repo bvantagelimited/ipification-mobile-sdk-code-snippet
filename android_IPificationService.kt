@@ -537,6 +537,7 @@ class IPificationCoreService(redirectUri: String?) {
     private fun handleUnAvailableCase() {
         // Add the implementation for handling the unavailable network case
         mCallback?.onFailure("onUnavailable: Failed to request network. Timeout error")
+        mCallback = null
     }
     /**
      * Checks if the provided URL string is a valid URL.
