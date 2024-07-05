@@ -444,10 +444,8 @@ class IPificationCoreService(redirectUri: String?) {
             handleAuthResponse(response)
         }
         else { // error
-            handleAuthResponse(response)
+            handleErrorResponse(response)
         }
-
-
     }
 
     private fun handleAuthResponse(response: Response) {
@@ -459,11 +457,11 @@ class IPificationCoreService(redirectUri: String?) {
                 if(!code.isNullOrEmpty()){
                     mCallback?.onSuccess(responseBody)
                     mCallback = null
-                }else{
+                } else {
                     mCallback?.onFailure(responseBody)
                     mCallback = null
                 }
-            }else{
+            } else {
                 mCallback?.onFailure(responseBody)
                 mCallback = null
             }
@@ -484,7 +482,7 @@ class IPificationCoreService(redirectUri: String?) {
                 val available = json.getBoolean("available")
                 if(available){
                     mCallback?.onSuccess(responseBody)
-                }else{
+                } else {
                     mCallback?.onFailure(responseBody)
                 }
             }
@@ -493,7 +491,24 @@ class IPificationCoreService(redirectUri: String?) {
             mCallback?.onFailure("${e.message}")
         }
     }
+    
+    /**
+    * Handles error response
+    * @param response The HTTP response received.
+    */
+    private fun handleErrorResponse(response: Response) {
+        try{
+            val responseBody = response.body!!.string()
+            mCallback?.onFailure(responseBody)
+            mCallback = null
 
+        }catch (e: Exception){
+            e.printStackTrace()
+            mCallback?.onFailure(e.message ?: "something went wrong")
+            mCallback = null
+        }
+    }
+    
     /**
      * Handles the redirect response by extracting the 'Location' header.
      *
