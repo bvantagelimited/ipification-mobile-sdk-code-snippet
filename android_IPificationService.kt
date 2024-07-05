@@ -419,6 +419,8 @@ class IPificationCoreService(redirectUri: String?) {
                 Log.e(TAG, ("httpClient - onFailure: " + e.message ))
                 e.printStackTrace()
                 mCallback?.onFailure(e.message ?: "something went wrong")
+                mCallback = null
+
             }
         })
     }
