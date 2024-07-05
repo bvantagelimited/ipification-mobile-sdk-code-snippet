@@ -485,10 +485,13 @@ class IPificationCoreService(redirectUri: String?) {
                 } else {
                     mCallback?.onFailure(responseBody)
                 }
+                mCallback = null
+
             }
         }catch (e: Exception){
             e.printStackTrace()
             mCallback?.onFailure("${e.message}")
+            mCallback = null
         }
     }
     
