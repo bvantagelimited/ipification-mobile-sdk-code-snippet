@@ -115,7 +115,7 @@ class IPificationService {
                 // Handle the success response
                 // Supported telco
                 // TODO: Start authentication with the phone number
-                performAuthenticationRequest(context, clientID, redirectUri, phoneNumber, callback)
+                performAuthenticationRequest(context, phoneNumber, clientID, redirectUri, callback)
             }
 
             override fun onFailure(error: String) {
@@ -131,9 +131,9 @@ class IPificationService {
 
     fun performAuthenticationRequest(
         context: Context,
+        phoneNumber: String,
         clientID: String,
         redirectUri: String,
-        phoneNumber: String,
         callback: IPCallback
     ) {
         Log.d(TAG, "performAuthenticationRequest...")
