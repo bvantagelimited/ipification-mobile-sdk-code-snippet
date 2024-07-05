@@ -1,5 +1,6 @@
 package com.ipification.demoapp.manager
 
+import android.annotation.TargetApi
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
