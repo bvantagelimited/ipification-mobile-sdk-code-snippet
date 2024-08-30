@@ -369,6 +369,11 @@ private val cookieJar: CookieJar = object : CookieJar {
         return cookies
     }
 }
+
+
+```
+More Detail Implementation: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_IPificationService.kt
+```
 ```
 ### License
 
