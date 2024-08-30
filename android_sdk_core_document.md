@@ -321,7 +321,7 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 ```
 --------------------------
 CookieJar (need to implement in case handling redirect urls)
-
+* For UK, RU market only
 Some special telcos (UK, RU) validate request cookies in their redirection flow. So we need to implement cookie manager to handle it
 --------------------------
 private val cookieJar: CookieJar = object : CookieJar {
