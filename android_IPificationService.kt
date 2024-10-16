@@ -455,10 +455,10 @@ class IPificationCoreService(redirectUri: String?) {
             val dns = NetworkDns.instance
             dns.setNetwork(network)
             httpBuilder.dns(dns)
-
-            // handle cookie (for special market telcos: RU,UK)
-            httpBuilder.cookieJar(cookieJar)
         }
+        
+        // handle cookie (for special market telcos: RU,UK)
+        httpBuilder.cookieJar(cookieJar)
 
         //check and handle the response with redirect_uri
         if(mApiType == APIType.AUTH){
