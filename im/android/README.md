@@ -12,19 +12,44 @@ The provided code snippet demonstrates how to initiate the authentication proces
 The code snippet initializes the IPification AUTH API with the required configuration and starts the authentication process. It also defines callbacks to handle authentication success, failure, and when the user opens the IM app.
 
 ## Instructions for Use
+### Manifest Configuration
+
+In your `AndroidManifest.xml` file, make sure to add the following attributes to the activity declaration:
+
+```xml
+<activity
+    android:name=".YourIMLoginActivity"
+    android:launchMode="singleInstance"
+    android:windowSoftInputMode="adjustPan">
+    <!-- Other activity attributes and configurations -->
+</activity>
+```
+Adding `android:launchMode="singleInstance"` ensures that the activity is launched as a single instance, while `android:windowSoftInputMode="adjustPan"` adjusts the pan of the window to make room for the input method (soft keyboard).
+
+Additionally, include the following `<queries>` section to declare the packages required for your app to query IM apps:
+
+```xml
+<queries>
+    <package android:name="org.telegram.messenger" />
+    <package android:name="org.telegram.messenger.web" />
+    <package android:name="com.whatsapp" />
+    <package android:name="com.viber.voip" />
+</queries>
+```
+
 
 1. **Set Up IPification Configuration**:
-   - Set the IPification environment to `SANDBOX`.
-   - Set your `CLIENT_ID`.
-   - Define your `REDIRECT_URI`.
-   - Generate a state using `generateState()` method.
-   - Define the priority app list for IM authentication.
-   - AUTOMODE IS ON (as always)
+    - AUTOMODE IS ON (as always)
+    - Set the IPification environment to `SANDBOX` or `PRODUCTION`.
+    - Set your `CLIENT_ID`.
+    - Define your `REDIRECT_URI`.
+    - [Optional] Generate a state using `generateState()` method.
+    - Define the priority app list for IM authentication.
 
-2. **Define Authentication Callbacks**:
+3. **Define Authentication Callbacks**:
    - Define callbacks to handle authentication success, failure, and when the user opens the IM app.
 
-3. **Start Authentication**:
+4. **Start Authentication**:
    - Call `startAuthentication()` method from `IMServices` with the provided callback.
 
 ## Usage Example
@@ -55,3 +80,33 @@ IPConfiguration.getInstance().currentState = IPConfiguration.getInstance().gener
 IPConfiguration.getInstance().IM_PRIORITY_APP_LIST = arrayOf("wa", "telegram", "viber")
 
 IMServices.startAuthentication(this@activity, callback)
+
+```
+
+## Handling Authentication Result
+
+To properly handle the authentication result in your activity, ensure you override the `onNewIntent()` and `onResume()` methods and call `IMServices.checkAndFinishSession()` within them.
+
+Override the `onNewIntent()` and `onResume()` methods in your activity. 
+
+```kotlin
+override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    // Set flag indicating new intent received
+    onNewIntent = true
+    // Call method to handle session check
+    IMServices.checkAndFinishSession()
+}
+
+override fun onResume() {
+    super.onResume()
+    // Check if activity was launched from a new intent
+    if (!onNewIntent) {
+        // If not, call method to handle session check
+        IMServices.checkAndFinishSession()
+    }
+    // Reset flag indicating new intent
+    onNewIntent = false
+}
+```
+

@@ -42,9 +42,8 @@ class IMServices {
         }
         /**
         * Perform IPification Authorization
-        * @param context: Context
-        * @param state: String
-        * @param callback: IPificationCallback
+        * @param activity: Activity
+        * @param callback: VerifyCompleteListener
         */
 
         fun startAuthentication(
@@ -52,6 +51,10 @@ class IMServices {
             callback: VerifyCompleteListener
         ) {
             linkwasOpen = false
+            
+            if(authRequesting == true){
+                return
+            }
             // Set authRequesting flag to true to indicate an authorization request is in progress
             authRequesting = true
             // Set the callback for handling the authorization response

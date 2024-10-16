@@ -4,16 +4,20 @@ This document describes the IPification Android SDK and its usage. The main purp
 
 
 Main Flow of Mobile SDK : 
-*   Check and create `Cellular Network` instance.
+1. Check Coverage
+* Call the Coverage API with the client's `phone` number (GET) through the Cellular Network .
+* Receive a response with: `is_available`- `true`: supported | `false`: not supported
+
+2. Start Authentication 
 *   Prepare the `authorization request` with required parameters
-*   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`
+*   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`.
 *   Receive a response with: 
     *   result directly via `redirect_uri` (1) or 
     *   redirection url (`301` or `302`) (2)
 *   (1) -> Parser the response then return the result to client
 *   (2) -> Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
 
-**Note:** All requests need to be performed via `cellular network`.
+**Note:** All requests need to be performed via `cellular network` interface.
 
 
 ## Authorization Request (HTTP)
@@ -109,7 +113,7 @@ class CellularConnection {
                     }
 
                     override fun onUnavailable() {
-                        // cellular network is not available, callback
+                        // cellular network is not available, call the callback error
                         Log.e("TestAPI", "cellular network is not available")
                     }
                 },
@@ -121,10 +125,12 @@ class CellularConnection {
                 request,
                 object : ConnectivityManager.NetworkCallback() {
                     override fun onAvailable(network: Network) {
+                        isReceiveResponse = true
                         processRequest(context, network, authRequest)
                     }
 
                     override fun onUnavailable() {
+                        isReceiveResponse = true
                         // cellular network is not available, callback
                         Log.e("CellularConnection", "cellular network is not available")
                     }
@@ -132,10 +138,10 @@ class CellularConnection {
             )
             Timer().schedule(object : TimerTask() {
                 override fun run() {
-//                    LogUtils.debug("timeout isReceiveResponse=${isReceiveResponse} ")
-//                    if (!isReceiveResponse) {
-//                        handleUnAvailableCase(cellularCallback)
-//                    }
+                    LogUtils.debug("timeout isReceiveResponse=${isReceiveResponse} ")
+                    if (!isReceiveResponse) {
+                        handleUnAvailableCase(cellularCallback)
+                    }
                 }
             }, 5000)
         }
@@ -143,47 +149,55 @@ class CellularConnection {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest) {
-        // using OkHTTP library to make the connection
-        val httpBuilder =
-            OkHttpClient.Builder()
-        // add dns if needed
-        if (network != null) {
+         // using OkHTTP library to make the connection
+         val httpBuilder =OkHttpClient.Builder()
+         // add dns if needed
+         if (network != null) {
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
+            // enable DNS resolver with cellularnetwork
             if (!isIPEndpoints(authRequest.getUrl())) {
                 // enable dns based on cellular network
                 val dns = NetworkDns.instance
                 dns.setNetwork(network)
                 httpBuilder.dns(dns)
             }
-        }
-
-        //check and handle the response with redirect_uri
-        httpBuilder.addNetworkInterceptor(
+         }
+         
+         //check and handle the response with redirect_uri
+         httpBuilder.addNetworkInterceptor(
             HandleRedirectInterceptor(
                 context,
                 authRequest.getUrl(),
                 authRequest.mRedirectUri.toString()
             )
-        )
+         )
+         
+         // disable retry connection
+         httpBuilder.retryOnConnectionFailure(false)
+         
+         // handle cookie (optional)
+         httpBuilder.cookieJar(cookieJar)
+         
+         val httpClient = httpBuilder.build()
 
-        // handle cookie
-        httpBuilder.cookieJar(cookieJar)
-
-
-        val okHttpClient = httpBuilder.build()
-        val mRequestBuilder = Request.Builder()
-            .url(authRequest.getUrl())
-
-        try {
-            val response: Response = okHttpClient.newCall(mRequestBuilder.build()).execute()
-            Log.i(
-                "CellularConnection", " callAPIonCellularNetwork RESULT:${response.body?.string()}"
-            )
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            Log.e("CellularConnection", ex.message!!)
-        }
+         val okHttpRequestBuilder = Request.Builder()
+         //url
+         okHttpRequestBuilder.url(authRequest.getUrl())
+         
+         val okHttpRequest: Request = okHttpRequestBuilder
+            .build()        
+         httpClient.newCall(okHttpRequest).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                // handle the response
+               Log.i("CellularConnection", "callAPIonCellularNetwork RESULT:${response.body?.string()}")
+            }
+            
+            override fun onFailure(call: Call, e: IOException) {
+               e.printStackTrace()
+            }
+         })
+        
     }
 
     // minor functions
@@ -281,7 +295,7 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
     override fun intercept(chain: Interceptor.Chain): Response {
 
         val request: Request = chain.request()
-        val response: Response = response = chain.proceed(request)
+        val response: Response = chain.proceed(request)
         // check and return success response if location match with defined redirect-uri
         if (response.code in 300.. 399){
            if ((response.headers["location"] != null && response.headers["location"]!!.startsWith(redirectUri)) 
@@ -295,7 +309,6 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
                   builder.code(200).message("success").body(body)                 
                   // close the response body to avoid exception
                   response.body?.close()
-                  
                   return builder.build()
                }
         }
@@ -308,7 +321,7 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 ```
 --------------------------
 CookieJar (need to implement in case handling redirect urls)
-
+* For UK, RU market only
 Some special telcos (UK, RU) validate request cookies in their redirection flow. So we need to implement cookie manager to handle it
 --------------------------
 private val cookieJar: CookieJar = object : CookieJar {
@@ -356,6 +369,11 @@ private val cookieJar: CookieJar = object : CookieJar {
         return cookies
     }
 }
+
+
+```
+More Detail Implementation: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_IPificationService.kt
+```
 ```
 ### License
 
