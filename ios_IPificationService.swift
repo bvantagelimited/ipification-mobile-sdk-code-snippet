@@ -56,7 +56,8 @@ class IPificationService {
         let authURLString = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
 
         // Generate a random state string for security
-        let randomState = randomString(length: 16)
+        // deprecated
+        // let randomState = randomString(length: 16)
         
         // Build the URL components for the authentication request
         guard var urlComponents = URLComponents(string: authURLString) else {
@@ -70,7 +71,7 @@ class IPificationService {
             URLQueryItem(name: "client_id", value: clientID),
             URLQueryItem(name: "redirect_uri", value: redirectUri),
             URLQueryItem(name: "scope", value: "openid ip:phone_verify"),
-            URLQueryItem(name: "state", value: randomState),
+            // URLQueryItem(name: "state", value: randomState),
             URLQueryItem(name: "login_hint", value: phoneNumber)
         ]
         
@@ -125,7 +126,9 @@ class IPificationService {
 
 class IPificationCoreService {
     let requestStrFrmt =  "GET %@ HTTP/1.1\r\n%@%@Host: %@\r\n\r\n";
-    
+
+    var cookies : [HTTPCookie] = []
+
     var REDIRECT_URI = ""
     var isNetworkError = false
     var isConnectReady = 0
@@ -147,6 +150,7 @@ class IPificationCoreService {
         self.isNetworkError = false
         self.receivedData = 0
         self.previousByteLengh = 0
+        self.cookies = []
     }
     
     // Function to connect to a specified URL
@@ -263,8 +267,10 @@ class IPificationCoreService {
         let query = url.query != nil ? "?" + url.query! : ""
         print( "query" , query)
         
+        let cookies = loadCookies(host: url.host!, path: path)
+
         // Format the HTTP request
-        let body =  String(format: requestStrFrmt, path + query , "", "", host)
+        let body =  String(format: requestStrFrmt, path + query , "", cookies, host)
         print(body)
                 
         socket.writeData(body.data(using: .utf8)!, withTag: 1)
@@ -363,7 +369,17 @@ class IPificationCoreService {
     func didReadData(_ data: Data, withTag: Int) {
         let str = String(decoding: data, as: UTF8.self)
         let components = str.components(separatedBy: "\r\n\r\n")
-        
+
+        // check and save cookie
+        if(str.contains("set-cookie") || str.contains("Set-Cookie")){
+           array = str.components(separatedBy: "\r\n")
+            for data in array{
+                if(data.starts(with: "set-cookie:") || data.starts(with: "Set-Cookie:")){
+                    let cookie = data.components(separatedBy: ": ")[1]
+                    saveCookie(rawCookie: cookie)
+                }
+            }
+        }
         if components.count > 1 {
             let headers = components[0]
             let body = components[1]
@@ -525,4 +541,93 @@ class IPificationCoreService {
         self.receivedData = 0
         self.previousByteLengh = 0
     }
+
+    //support cookies
+    //save cookie
+    func saveCookie(rawCookie: String){
+        let rawCookieParams = rawCookie.components(separatedBy: ";");
+        let rawCookieNameAndValue = rawCookieParams[0].split(separator: "=", maxSplits: 1);
+        if (rawCookieNameAndValue.count != 2) {
+            return
+        }
+        let cookieName = rawCookieNameAndValue[0].trimmingCharacters(in: .whitespaces);
+        let cookieValue = rawCookieNameAndValue[1].trimmingCharacters(in: .whitespaces);
+        
+        var isSecure = "FALSE"
+        var domain = currentHost
+        var path = "/"
+        var httpOnly = false
+        
+        for i in 0..<rawCookieParams.count {
+            let rawCookieParamNameAndValue = rawCookieParams[i].split(separator: "=", maxSplits: 1);
+            
+            let paramName = rawCookieParamNameAndValue[0].trimmingCharacters(in: .whitespaces);
+            
+            if (paramName == "Secure" || paramName == "secure") {
+                isSecure = "TRUE"
+            }
+            else if (paramName == "HttpOnly") {
+                httpOnly = true
+            }
+            else {
+                if (rawCookieParamNameAndValue.count == 2) {
+                    let paramValue = rawCookieParamNameAndValue[1].trimmingCharacters(in: .whitespaces);
+                    if (paramName.caseInsensitiveCompare("domain") == .orderedSame ) {
+                        domain = paramValue
+                    } else if (paramName.caseInsensitiveCompare("path") == .orderedSame ) {
+                        path = paramValue
+                    }
+                }else{
+                   print("Invalid cookie: attribute not a flag or missing value. \(rawCookieParamNameAndValue)");
+                }
+            }
+        }
+        let cookie = saveCookie(name: cookieName, value: cookieValue, domain: domain, path: path, isSecure: isSecure, httpOnly: httpOnly)
+        if(cookie != nil){
+            cookies.append(cookie)
+        }
+    }
+    
+    func saveCookie(name: String, value: String, domain: String, path: String, isSecure: String, httpOnly: Bool) -> HTTPCookie?{
+        var cookieProps: [HTTPCookiePropertyKey : Any] = [
+            HTTPCookiePropertyKey.name: name,
+            HTTPCookiePropertyKey.value: value,
+            HTTPCookiePropertyKey.domain: domain,
+            HTTPCookiePropertyKey.path: path
+        ]
+        if(isSecure == "TRUE"){
+            cookieProps = [
+                HTTPCookiePropertyKey.name: name,
+                HTTPCookiePropertyKey.value: value,
+                HTTPCookiePropertyKey.secure: isSecure,
+                HTTPCookiePropertyKey.domain: domain,
+                HTTPCookiePropertyKey.path: path
+            ]
+        }
+
+        let cookie = HTTPCookie(properties: cookieProps)
+        return cookie
+    }
+    
+    func loadCookies(host : String, path : String) -> String{
+        var result = "Cookie: "
+        // print("loadCookies: \(host) \(path)")
+        let cookies = CookieManager.sharedInstance.getCookies()
+        var isExist = false
+        for cookie in cookies {
+            // print("host.contains(cookie.domain): \(host.contains(cookie.domain)) - path.starts(with: cookie.path): \(path.starts(with: cookie.path))")
+            if(host.contains(cookie.domain) && path.starts(with: cookie.path)){
+                result += "\(cookie.name)=\(cookie.value); "
+                isExist = true
+            }
+        }
+        result += "\r\n"
+        if(isExist == false){
+            result = ""
+        }
+        // print("loadCookies - result: \(result)")
+        return result
+    }
 }
+
+
