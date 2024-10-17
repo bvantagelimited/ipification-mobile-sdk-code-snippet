@@ -15,5 +15,8 @@
 
         <!-- SmartDigits (TRUID) -->
         <domain includeSubdomains="true">smartdigits.io</domain>
+
+        <!-- Vodafone (UK) -->
+        <domain includeSubdomains="true">vodafone.com</domain>
     </domain-config>
 </network-security-config>
