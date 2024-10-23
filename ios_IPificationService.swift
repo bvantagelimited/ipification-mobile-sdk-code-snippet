@@ -138,7 +138,8 @@ class IPificationCoreService {
     var mData = Data()
     var connection: NWConnection!
     var requestType: RequestType = .auth
-    
+    var currentHost = ""
+
     public var onSuccess: ((_ response: String) -> Void)?
     public var onError: ((_ error: String) -> Void)?
 
@@ -190,7 +191,7 @@ class IPificationCoreService {
             return
         }
         
-
+        currentHost = hostString
         let host = NWEndpoint.Host(hostString)
         let port = NWEndpoint.Port(rawValue: url.scheme == "http" ? 80 : 443)
         
@@ -584,7 +585,7 @@ class IPificationCoreService {
         }
         let cookie = saveCookie(name: cookieName, value: cookieValue, domain: domain, path: path, isSecure: isSecure, httpOnly: httpOnly)
         if(cookie != nil){
-            cookies.append(cookie)
+            cookies.append(cookie!)
         }
     }
     
@@ -612,7 +613,6 @@ class IPificationCoreService {
     func loadCookies(host : String, path : String) -> String{
         var result = "Cookie: "
         // print("loadCookies: \(host) \(path)")
-        let cookies = CookieManager.sharedInstance.getCookies()
         var isExist = false
         for cookie in cookies {
             // print("host.contains(cookie.domain): \(host.contains(cookie.domain)) - path.starts(with: cookie.path): \(path.starts(with: cookie.path))")
