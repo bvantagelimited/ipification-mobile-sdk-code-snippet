@@ -373,7 +373,7 @@ class IPificationCoreService {
 
         // check and save cookie
         if(str.contains("set-cookie") || str.contains("Set-Cookie")){
-           array = str.components(separatedBy: "\r\n")
+            let array = str.components(separatedBy: "\r\n")
             for data in array{
                 if(data.starts(with: "set-cookie:") || data.starts(with: "Set-Cookie:")){
                     let cookie = data.components(separatedBy: ": ")[1]
