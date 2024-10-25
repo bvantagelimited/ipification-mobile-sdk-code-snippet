@@ -1,4 +1,8 @@
-// iOS - Swift
+# iOS and Android IP Configuration
+
+## iOS - Swift
+
+```swift
 if (isProduction) {
     IPConfiguration.sharedInstance.ENV = IPEnvironment.PRODUCTION
     IPConfiguration.sharedInstance.customUrls = true
@@ -7,7 +11,6 @@ if (isProduction) {
     // TODO: your client credential on live
     // IPConfiguration.sharedInstance.CLIENT_ID = ""
     // IPConfiguration.sharedInstance.REDIRECT_URL = ""
-
 } else {
     IPConfiguration.sharedInstance.ENV = IPEnvironment.SANDBOX
     IPConfiguration.sharedInstance.customUrls = true
@@ -20,7 +23,9 @@ if (isProduction) {
 }
 
 
-// Android - Kotlin
+## Android - Kotline
+
+```kotlin
 if (isProduction) {
     IPConfiguration.getInstance().ENV = IPEnvironment.PRODUCTION
     IPConfiguration.getInstance().customUrls = true
@@ -29,7 +34,6 @@ if (isProduction) {
     // TODO: your client credential on live
     // IPConfiguration.getInstance().CLIENT_ID = ""
     // IPConfiguration.getInstance().REDIRECT_URL = ""
-
 } else {
     IPConfiguration.getInstance().ENV = IPEnvironment.SANDBOX
     IPConfiguration.getInstance().customUrls = true
