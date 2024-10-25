@@ -27,7 +27,7 @@ if isProduction {
     IPConfiguration.getInstance().COVERAGE_URL = Uri.parse("https://api.ipification.com/auth/realms/ipification/coverage")
     IPConfiguration.getInstance().AUTHORIZATION_URL = Uri.parse("https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth")
     // TODO: your client credential on live
-//                 IPConfiguration.getInstance().CLIENT_ID = ""
+    // IPConfiguration.getInstance().CLIENT_ID = ""
     // IPConfiguration.getInstance().REDIRECT_URL = ""
 
 } else {
