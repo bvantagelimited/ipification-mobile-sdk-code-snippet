@@ -1,4 +1,4 @@
-# iOS and Android IP Configuration
+# iOS and Android IP Configuration Update for New Staging Environment
 
 ## iOS - Swift
 
