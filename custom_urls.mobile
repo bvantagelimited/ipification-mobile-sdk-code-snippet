@@ -1,5 +1,5 @@
 // iOS - Swift
-if isProduction {
+if (isProduction) {
     IPConfiguration.sharedInstance.ENV = IPEnvironment.PRODUCTION
     IPConfiguration.sharedInstance.customUrls = true
     IPConfiguration.sharedInstance.COVERAGE_URL = "https://api.ipification.com/auth/realms/ipification/coverage"
@@ -21,7 +21,7 @@ if isProduction {
 
 
 // Android - Kotlin
-if isProduction {
+if (isProduction) {
     IPConfiguration.getInstance().ENV = IPEnvironment.PRODUCTION
     IPConfiguration.getInstance().customUrls = true
     IPConfiguration.getInstance().COVERAGE_URL = Uri.parse("https://api.ipification.com/auth/realms/ipification/coverage")
