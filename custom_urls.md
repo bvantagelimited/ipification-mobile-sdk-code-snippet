@@ -21,7 +21,7 @@ if (isProduction) {
     // IPConfiguration.sharedInstance.CLIENT_ID = ""
     // IPConfiguration.sharedInstance.REDIRECT_URL = ""
 }
-
+```
 
 ## Android - Kotline
 
@@ -44,3 +44,4 @@ if (isProduction) {
     // IPConfiguration.getInstance().CLIENT_ID = ""
     // IPConfiguration.getInstance().REDIRECT_URL = ""
 }
+```
