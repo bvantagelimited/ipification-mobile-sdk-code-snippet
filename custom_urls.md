@@ -23,7 +23,7 @@ if (isProduction) {
 }
 ```
 
-## Android - Kotline
+## Android - Kotlin
 
 ```kotlin
 if (isProduction) {
