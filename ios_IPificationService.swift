@@ -449,10 +449,12 @@ class IPificationCoreService {
                             } else {
                                 onError?(result)
                             }
-                        } else {
+                        } else if(requestType == .auth){{
                             // return success status 200 for other type
                             let result = components.count > 1 ? components[1] : ""
-                            onSuccess?(result)
+                            onError?(result)
+                        } else {
+                            onError?(result)
                         }
                     default:
                         // Handle other error statuses
