@@ -18,5 +18,10 @@
 
         <!-- Vodafone (UK) -->
         <domain includeSubdomains="true">vodafone.com</domain>
+
+        <!-- SmartFren (ID) -->
+        <domain includeSubdomains="true">smartfren.com</domain>
+
+
     </domain-config>
 </network-security-config>
