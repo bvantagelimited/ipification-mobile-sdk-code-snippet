@@ -368,9 +368,11 @@ class IPificationCoreService {
     
     // Function called when data is successfully read
     func didReadData(_ data: Data, withTag: Int) {
+        self.receivedData = 1
+        
         let str = String(decoding: data, as: UTF8.self)
         let components = str.components(separatedBy: "\r\n\r\n")
-
+        
         // check and save cookie
         if(str.contains("set-cookie") || str.contains("Set-Cookie")){
             let array = str.components(separatedBy: "\r\n")
