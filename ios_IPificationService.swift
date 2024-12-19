@@ -352,7 +352,7 @@ class IPificationCoreService {
                 if let d = data {
                     datalength = d.count
                     self.mData.append(d)
-                    self.receivedData = 1
+                    // self.receivedData = 1
                     
                     print("dataLength: received: \(datalength) - previous: \(self.previousByteLengh)")
                     if datalength < self.previousByteLengh || datalength < 4096 {
