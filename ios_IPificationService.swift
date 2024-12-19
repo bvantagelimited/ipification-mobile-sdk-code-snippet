@@ -355,7 +355,7 @@ class IPificationCoreService {
                     // self.receivedData = 1
                     
                     print("dataLength: received: \(datalength) - previous: \(self.previousByteLengh)")
-                    if datalength < self.previousByteLengh || datalength < 4096 {
+                    if datalength < self.previousByteLengh || datalength < 4096 || (datalength == 4096 && contentContext?.isFinal == true) {
                         self.didReadData(self.mData, withTag: tag)
                         return
                     }
