@@ -14,8 +14,11 @@ The **Phone Number Hint API** provides a seamless way to retrieve a user’s SIM
 Include the following in your `app/build.gradle` file:
 
 ```groovy
+// For Phone Number Hint API
 implementation 'com.google.android.gms:play-services-auth:21.3.0'
-implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24") // parse and format phone numbers
+
+// For Parsing and Formatting Phone Numbers
+implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24") 
 ```
 
 ---
@@ -31,6 +34,7 @@ val signInClient = Identity.getSignInClient(this)
 signInClient.getPhoneNumberHintIntent(request)
     .addOnSuccessListener { result: PendingIntent ->
         try {
+            // Launch the hint picker to display phone numbers
             phoneNumberHintIntentResultLauncher.launch(
                 IntentSenderRequest.Builder(result).build()
             )
@@ -52,12 +56,23 @@ Register an `ActivityResultLauncher` to process the result:
 ```kotlin
 private val phoneNumberHintIntentResultLauncher =
     registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val phoneNumber = Identity.getSignInClient(this)
-                .getPhoneNumberFromIntent(result.data)
-            // Use the retrieved phone number
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            try {
+                // Extract the phone number from the intent result
+                val phoneNumber = Identity.getSignInClient(requireActivity())
+                    .getPhoneNumberFromIntent(result.data)
+                
+                val phone = detectCountryAndExtractNationalNumber(phoneNumber)
+                binding.phoneCodeEditText.setText(phone.second)
+
+                Log.d("PhoneHint", "Phone number: $phoneNumber")
+            } catch (e: Exception) {
+                Log.e("PhoneHint", "Failed to retrieve phone number: ${e.message}")
+                Toast.makeText(requireContext(), "Failed to retrieve phone number", Toast.LENGTH_SHORT).show()
+            }
         } else {
-            Log.e("PhoneNumberHint", "User canceled or an error occurred")
+            Log.e("PhoneHint", "Phone number hint was cancelled or failed")
+            Toast.makeText(requireContext(), "Phone number hint cancelled", Toast.LENGTH_SHORT).show()
         }
     }
 ```
@@ -73,7 +88,7 @@ private val phoneNumberHintIntentResultLauncher =
 For more details, refer to the [official documentation](https://developers.google.com/identity/phone-number-hint/android). 🚀
 
 
-## **Complete example**:
+## ✅ **Complete example**:
 
 ```kotlin
 import android.app.PendingIntent
@@ -146,16 +161,18 @@ class PhoneNumberHintFragment : Fragment() {
     fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, String?> {
         val phoneUtil = PhoneNumberUtil.getInstance()
         return try {
-            // Parse without specifying a default region
+            // Parse the phone number without specifying a region
             val parsedNumber: Phonenumber.PhoneNumber = phoneUtil.parse(phoneNumber, null)
-
-            // Get the country code and national number
+    
+            // Extract region and national number
             val countryCode = phoneUtil.getRegionCodeForNumber(parsedNumber)
             val nationalNumber = parsedNumber.nationalNumber.toString()
-
+    
+            Log.d("PhoneHint", "Detected country: $countryCode, National number: $nationalNumber")
+    
             Pair(countryCode, nationalNumber)
         } catch (e: NumberParseException) {
-            println("Failed to parse phone number: ${e.message}")
+            Log.e("PhoneHint", "Failed to parse phone number: ${e.message}")
             Pair(null, null)
         }
     }
