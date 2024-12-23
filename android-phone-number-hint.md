@@ -15,6 +15,7 @@ Include the following in your `app/build.gradle` file:
 
 ```groovy
 implementation 'com.google.android.gms:play-services-auth:21.3.0'
+implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24") // parse and format phone numbers
 ```
 
 ---
