@@ -143,20 +143,20 @@ class PhoneNumberHintFragment : Fragment() {
     }
 
     fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, String?> {
-            val phoneUtil = PhoneNumberUtil.getInstance()
-            return try {
-                // Parse without specifying a default region
-                val parsedNumber: Phonenumber.PhoneNumber = phoneUtil.parse(phoneNumber, null)
-    
-                // Get the country code and national number
-                val countryCode = phoneUtil.getRegionCodeForNumber(parsedNumber)
-                val nationalNumber = parsedNumber.nationalNumber.toString()
-    
-                Pair(countryCode, nationalNumber)
-            } catch (e: NumberParseException) {
-                println("Failed to parse phone number: ${e.message}")
-                Pair(null, null)
-            }
+        val phoneUtil = PhoneNumberUtil.getInstance()
+        return try {
+            // Parse without specifying a default region
+            val parsedNumber: Phonenumber.PhoneNumber = phoneUtil.parse(phoneNumber, null)
+
+            // Get the country code and national number
+            val countryCode = phoneUtil.getRegionCodeForNumber(parsedNumber)
+            val nationalNumber = parsedNumber.nationalNumber.toString()
+
+            Pair(countryCode, nationalNumber)
+        } catch (e: NumberParseException) {
+            println("Failed to parse phone number: ${e.message}")
+            Pair(null, null)
         }
+    }
 }
 ```
