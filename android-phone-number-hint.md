@@ -5,6 +5,8 @@ Follow the official documentation here: [Phone Number Hint API](https://develope
 
 The **Phone Number Hint API** provides a seamless way to retrieve a user’s SIM-based phone numbers **without requiring additional permissions** or **manual input**.
 
+<img src="https://github.com/user-attachments/assets/ab967ffb-5fdd-452c-99cc-191a399f9686" alt="Screenshot_20241224_113312" width="300"/>
+
 ---
 
 ## 🚀 **Implementation Steps**
