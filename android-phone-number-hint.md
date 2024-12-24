@@ -17,7 +17,7 @@ Include the following in your `app/build.gradle` file:
 // For Phone Number Hint API
 implementation 'com.google.android.gms:play-services-auth:21.3.0'
 
-// For Parsing and Formatting Phone Numbers
+// For Parsing and Formatting Phone Numbers (optional)
 implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24") 
 ```
 
