@@ -16,7 +16,7 @@ To support authentication with these telcos, which require cleartext network tra
 https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/xml/ipification_network_security_config.xml
 
 
-### Main Flow of Mobile SDK : 
+## Main Flow of Mobile SDK : 
 1. Check Coverage
 * Call the Coverage API with the client's `phone` number (GET) through the Cellular Network .
 * Receive a response with: `is_available`- `true`: supported | `false`: not supported
