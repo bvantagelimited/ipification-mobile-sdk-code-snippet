@@ -56,8 +56,7 @@ class IPificationService {
         let authURLString = "https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth"
 
         // Generate a random state string for security
-        // deprecated
-        // let randomState = randomString(length: 16)
+        let randomState = randomString(length: 16)
         
         // Build the URL components for the authentication request
         guard var urlComponents = URLComponents(string: authURLString) else {
@@ -71,7 +70,7 @@ class IPificationService {
             URLQueryItem(name: "client_id", value: clientID),
             URLQueryItem(name: "redirect_uri", value: redirectUri),
             URLQueryItem(name: "scope", value: "openid ip:phone_verify"),
-            // URLQueryItem(name: "state", value: randomState),
+            URLQueryItem(name: "state", value: randomState),
             URLQueryItem(name: "login_hint", value: phoneNumber)
         ]
         
