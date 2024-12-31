@@ -2,7 +2,7 @@
 
 This document describes the IPification Android SDK and its usage. The main purpose of the SDK is to provide network-based authentication for mobile users.
 
-# ClearText HTTP supports
+### ClearText HTTP supports
 
 This configuration is only required for specific countries and telcos:
 
