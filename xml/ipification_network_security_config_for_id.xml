@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Tri (Indonesia -->
+        <domain includeSubdomains="true">ipification.com</domain>
+
+        <!-- XL (Indonesia) -->
+        <domain includeSubdomains="true">xl.co.id</domain>
+
+        <!-- SmartFren (ID) -->
+        <domain includeSubdomains="true">smartfren.com</domain>
+
+
+    </domain-config>
+</network-security-config>
