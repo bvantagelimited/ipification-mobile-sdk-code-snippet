@@ -36,7 +36,7 @@ login_hint={login_hint}
 -------
 Response: 
 (1) 200 - redirect_uri?code=abcxyz&state={state}
-(2) 302 - url redirection (ex: https://mnv.telco.com/webhook/api/webhook/auth?state=xyzabc)
+(2) 30x - url redirection (ex: https://mnv.telco.com/webhook/api/webhook/auth?state=xyzabc)
 ```
 
 ##### Parameters:
