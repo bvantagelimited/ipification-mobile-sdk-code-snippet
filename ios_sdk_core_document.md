@@ -16,7 +16,7 @@ Main Flow of iOS SDK :
 *   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`.
 *   Receive a response with: 
     *   result directly via `redirect_uri` (1) or 
-    *   redirection url (`301` or `302`) (2)
+    *   redirection url (`301` or `302` or `303`) (2)
 *   (1) -> Parser the response then return the result to client
 *   (2) -> Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
 
