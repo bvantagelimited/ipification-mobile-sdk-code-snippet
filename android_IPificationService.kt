@@ -225,7 +225,7 @@ class IPificationService {
     private fun getCoverageURL(environment: String): String {
         val baseUrl = when (environment) {
             "live" -> "https://api.ipification.com"
-            else -> "https://stage.ipification.com"
+            else -> "https://api.stage.ipification.com"
         }
         return "$baseUrl/auth/realms/ipification/coverage"
     }
@@ -239,7 +239,7 @@ class IPificationService {
     private fun getAuthURL(environment: String): String {
         val baseUrl = when (environment) {
             "live" -> "https://api.ipification.com"
-            else -> "https://stage.ipification.com"
+            else -> "https://api.stage.ipification.com"
         }
         return "$baseUrl/auth/realms/ipification/protocol/openid-connect/auth"
     }
@@ -605,7 +605,7 @@ class IPificationCoreService(redirectUri: String?) {
      * @return True if the URI is a known IP endpoint, false otherwise.
      */
     private fun isIPEndpoints(requestUri: String): Boolean {
-        return requestUri.startsWith("https://stage.ipification.com") ||
+        return requestUri.startsWith("https://api.stage.ipification.com") ||
                 requestUri.startsWith("https://api.ipification.com")
     }
 
