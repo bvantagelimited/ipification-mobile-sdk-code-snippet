@@ -15,7 +15,6 @@ import android.util.Base64
 import android.util.Log
 import android.util.Patterns
 import androidx.annotation.RequiresApi
-import com.ipification.demoapp.Helper
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Cookie
