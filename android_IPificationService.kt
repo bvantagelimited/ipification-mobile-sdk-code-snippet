@@ -16,8 +16,6 @@ import android.util.Log
 import android.util.Patterns
 import androidx.annotation.RequiresApi
 import com.ipification.demoapp.Helper
-import com.ipification.mobile.sdk.android.model.ResponseBody
-import com.ipification.mobile.sdk.android.ssl.TLSSocketFactory
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Cookie
@@ -708,6 +706,7 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
                 request.headers
             )
         )
+        val response = chain.proceed(request)
         // Check if the response is a redirect (HTTP 3xx status code)
         if (response.code in 300.. 399){
             val locationHeader = response.header("location") ?: response.header("Location")
