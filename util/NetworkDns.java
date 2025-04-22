@@ -1,79 +1,89 @@
 
-import android.net.Network;
-import android.os.Build;
+import android.net.Network
+import android.os.Build
+import android.os.Build.VERSION_CODES
 
-import org.jetbrains.annotations.NotNull;
+import java.net.Inet6Address
+import java.net.InetAddress
+import java.net.UnknownHostException
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.ArrayList
 
-import okhttp3.Dns;
+import okhttp3.Dns
 
-public class NetworkDns implements Dns {
+// Some telco networks intercept DNS and force resolutions through their own DNS servers.
+class NetworkDns private constructor() : Dns {
+    // The cellular Network to use for DNS resolution
+    private var mNetwork: Network? = null
 
-    private static NetworkDns sInstance;
-    private Network mNetwork;
-
-    public static NetworkDns getInstance() {
-        if (sInstance == null) {
-            sInstance = new NetworkDns();
-        }
-        return sInstance;
+    /**
+     * Assigns the network on which DNS lookups will be performed.
+     */
+    fun setNetwork(network: Network?) {
+        mNetwork = network
     }
 
-    public void setNetwork(Network network) {
-        mNetwork = network;
-    }
-
-    @NotNull
-    @Override
-    public List<InetAddress> lookup(String hostname) throws UnknownHostException {
-        // #24 - improve ways to resolve hostname if network cannot resolve
+    /**
+     * Performs a DNS lookup for the given hostname.
+     * If a Network is set (and API ≥ 21), uses that Network’s DNS; otherwise falls back to the system DNS.
+     * Prepends IPv6 addresses so they have priority over IPv4.
+     */
+    @Throws(UnknownHostException::class)
+    override fun lookup(hostname: String): List<InetAddress> {
         // case: wifi + 4G
-        if (mNetwork != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (mNetwork != null && Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
             try {
-                List<InetAddress> inetAddressList = new ArrayList<>();
-                InetAddress[] inetAddresses = mNetwork.getAllByName(hostname);
-                for (InetAddress inetAddress : inetAddresses) {
+                val inetAddressList: MutableList<InetAddress> = ArrayList()
+                // Query the specified Network for all addresses for this hostname
+                val inetAddresses = mNetwork!!.getAllByName(hostname)
+
+                for (inetAddress in inetAddresses) {
                     // priority ipv6 first
-                    if (!(inetAddress instanceof Inet4Address)) {
-                        inetAddressList.add(0, inetAddress);
+                    if (inetAddress is Inet6Address) {
+                        inetAddressList.add(0, inetAddress)
                     } else {
-                        inetAddressList.add(inetAddress);
+                        // IPv4 and any other address types get appended
+                        inetAddressList.add(inetAddress)
                     }
                 }
-                return inetAddressList;
-            } catch (NullPointerException | UnknownHostException ex) {
-                try {
-                    return Dns.SYSTEM.lookup(hostname);
-                } catch (UnknownHostException e) {
-                    return Arrays.asList(InetAddress.getAllByName(hostname));
+                return inetAddressList
+
+            } catch (ex: NullPointerException) {
+                // In rare cases Network.getAllByName might NPE—fall back to the system resolver
+                return try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    // As a last resort, use InetAddress
+                    listOf(*InetAddress.getAllByName(hostname))
+                }
+
+            } catch (ex: UnknownHostException) {
+                // If the network-based lookup fails, similarly fall back
+                return try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    listOf(*InetAddress.getAllByName(hostname))
                 }
             }
         }
 
         // case mobile only
-        try {
-            List<InetAddress> inetAddressList = new ArrayList<>();
-            InetAddress[] inetAddresses = InetAddress.getAllByName(hostname);
-            for (InetAddress inetAddress : inetAddresses) {
-                // priority ipv6 first
-                if (!(inetAddress instanceof Inet4Address)) {
-                    inetAddressList.add(0, inetAddress);
-                } else {
-                    inetAddressList.add(inetAddress);
-                }
-            }
-            return inetAddressList;
-        } catch (NullPointerException | UnknownHostException ex) {
-            return Dns.SYSTEM.lookup(hostname);
-        }
+        return Dns.SYSTEM.lookup(hostname)
     }
 
-    private NetworkDns() {
+    companion object {
+        // Singleton instance
+        private var sInstance: NetworkDns? = null
+
+        /**
+         * Provides the single shared instance of NetworkDns.
+         */
+        val instance: NetworkDns
+            get() {
+                if (sInstance == null) {
+                    sInstance = NetworkDns()
+                }
+                return sInstance!!
+            }
     }
 }
