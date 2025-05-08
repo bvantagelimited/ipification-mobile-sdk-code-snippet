@@ -64,8 +64,6 @@ More Detail here:
 
 For iOS 12 and newer, we use `NetWork framework` to make network connection via cellular interface.
 
-For iOS under 12, we use `CocoaAsyncSocket (7.6.4)`. Because iOS under 12 doesn’t support an official API to force connection to cellular interface,  we need to do it manually by using a socket library to force requests to use cellular. 
-Then find the cellular interface from `getifaddrs`, pass that interface to the socket function, socket bind will happen with cellular. 
 
 ### Core Function
 Using the following would be the correct approach to force the connection over cellular:
