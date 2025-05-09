@@ -156,9 +156,6 @@ class IPificationService {
     ) {
         Log.d(TAG, "performAuthenticationRequest...")
         val authURLString = getAuthURL(environment)
-//        val clientID = "" // TODO
-//        val redirectUri = "" // TODO
-//        val phoneNumber = "" // TODO
 
         if (clientID.isEmpty()) {
             Log.e(TAG, "clientID is null or empty")
