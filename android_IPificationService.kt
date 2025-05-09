@@ -94,8 +94,6 @@ class IPificationService {
         Log.d(TAG, "performCoverageRequest...")
         environment = env
         val coverageURLString = getCoverageURL(environment)
-//        val mClientID =  clientID// TODO
-//        val mphoneNumber = phoneNumber // TODO
 
         if (clientID.isEmpty()) {
             Log.e(TAG, "clientID is null or empty")
