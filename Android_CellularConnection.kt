@@ -10,7 +10,9 @@ import android.os.Build
 import android.util.Log
 import okhttp3.*
 
-
+/***
+* ⚠️ DEPRECATED: This implementation is outdated and contains known connectivity issues! ⚠️
+***/
 class CellularTest {
 
    // required permission:  INTERNET, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_NETWORK_STATE
