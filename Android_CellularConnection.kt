@@ -11,7 +11,9 @@ import android.util.Log
 import okhttp3.*
 
 /***
-* ⚠️ DEPRECATED: This implementation is outdated and contains known connectivity issues! ⚠️
+* ⚠️ DEPRECATED: This implementation is outdated.! ⚠️
+* please use our official reference implementation:
+* https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_IPificationService.kt
 ***/
 class CellularTest {
 
