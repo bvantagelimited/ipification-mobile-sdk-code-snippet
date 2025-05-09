@@ -49,11 +49,33 @@ import javax.net.ssl.HttpsURLConnection
 
 
 /**
+ * This service handles seamless mobile authentication by leveraging the cellular network identity,
+ * enabling passwordless verification without SMS or additional user actions.
+
  * IPificationService class handles the network requests for coverage and authentication.
  * It constructs the necessary URLs with the required parameters and makes requests to the IPification API.
  * The class includes functions to perform coverage requests and authentication requests.
  * It also includes helper functions to construct URLs, generate random states, and extract parameters from responses.
+
+ * 📱 Network Requirements:
+ * - Requires active cellular connection (3G/4G/5G)
+ * - Operates with or without concurrent WiFi connectivity
+ * - Automatically manages network routing through cellular transport
+
+ * 📋 Required Permissions:
+ * - android.permission.INTERNET
+ * - android.permission.ACCESS_NETWORK_STATE
+ * - android.permission.CHANGE_NETWORK_STATE
+ * - android.permission.ACCESS_WIFI_STATE
+ * 
+ * 📚 Dependencies:
+ * - OkHttp (com.squareup.okhttp3:okhttp) for network requests
+
+ * ⚠️ Cleartext HTTP Support:
+ * https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_sdk_core_document.md#cleartext-http-supports
  */
+
+
 class IPificationService {
     private var coverageRequesting: Boolean = false
     private var authRequesting: Boolean = false
