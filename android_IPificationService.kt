@@ -46,6 +46,7 @@ import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HttpsURLConnection
+import java.net.Inet6Address
 
 
 /**
@@ -670,7 +671,8 @@ class NetworkDns private constructor() : Dns {
                 val inetAddressList: MutableList<InetAddress> = ArrayList()
                 val inetAddresses = mNetwork!!.getAllByName(hostname)
                 for (inetAddress in inetAddresses) {
-                    if (inetAddress is Inet4Address) {
+                    // priority ipv6 first
+                    if (inetAddress is Inet6Address) {
                         inetAddressList.add(0, inetAddress)
                     } else {
                         inetAddressList.add(inetAddress)
