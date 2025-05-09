@@ -80,7 +80,7 @@ class IPificationService {
     private var coverageRequesting: Boolean = false
     private var authRequesting: Boolean = false
     private val TAG: String = "IPificationService"
-    var environment = "live" // or "live"
+    var environment = "live" // or "sanbox"
     var log = ""
     // Check Coverage to see if the phone number and active telco are supported or not.
     fun performCoverageRequest(
