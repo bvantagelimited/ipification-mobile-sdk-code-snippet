@@ -363,17 +363,28 @@ class IPificationCoreService(redirectUri: String?) {
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            var isReceiveResponse = false
             connectivityManager.requestNetwork(
                 request,
                 object : ConnectivityManager.NetworkCallback() {
                     override fun onAvailable(network: Network) {
                         Log.d(TAG, "onAvailable...")
+                        if(isReceiveResponse == true){
+                            // already received callback
+                            return
+                        }
+                        isReceiveResponse = true
                         processRequestWithNetwork(network)
                     }
 
                     override fun onUnavailable() {
                         // cellular network is not available, call the callback error
                         Log.e(TAG, "cellular network is not available")
+                        if(isReceiveResponse == true){
+                            // already received callback
+                            return
+                        }
+                        isReceiveResponse = true
                         handleUnAvailableCase()
                     }
                 },
