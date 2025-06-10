@@ -379,7 +379,7 @@ class IPificationCoreService(redirectUri: String?) {
 
                     override fun onUnavailable() {
                         // cellular network is not available, call the callback error
-                        Log.e(TAG, "onUnavailable: Could not find a cellular network within the timeout.")
+                        Log.e(TAG, "onUnavailable: Could not established cellular connection")
                         if(isReceiveResponse == true){
                             // already received callback
                             return
@@ -404,7 +404,7 @@ class IPificationCoreService(redirectUri: String?) {
                     override fun onUnavailable() {
                         isReceiveResponse = true
                         // cellular network is not available, callback
-                        Log.e(TAG, "onUnavailable: Could not find a cellular network within the timeout.")
+                        Log.e(TAG, "onUnavailable: Could not established cellular connection")
                         handleUnAvailableCase()
                     }
                 }
