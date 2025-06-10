@@ -329,7 +329,7 @@ class IPificationCoreService(redirectUri: String?) {
         }
 
         if(!isMobileDataEnabled(context)){
-            callback.onFailure("Mobile data is turned off. Please enable it in your device settings to continue.")
+            callback.onFailure("Mobile data is turned off.")
             return
         }
 
