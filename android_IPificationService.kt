@@ -329,7 +329,7 @@ class IPificationCoreService(redirectUri: String?) {
         }
 
         if(!isMobileDataEnabled(context)){
-            callback.onFailure("cellular network is not available")
+            callback.onFailure("Mobile data is turned off. Please enable it in your device settings to continue.")
             return
         }
 
@@ -379,7 +379,7 @@ class IPificationCoreService(redirectUri: String?) {
 
                     override fun onUnavailable() {
                         // cellular network is not available, call the callback error
-                        Log.e(TAG, "cellular network is not available")
+                        Log.e(TAG, "onUnavailable: Could not find a cellular network within the timeout.")
                         if(isReceiveResponse == true){
                             // already received callback
                             return
@@ -404,7 +404,7 @@ class IPificationCoreService(redirectUri: String?) {
                     override fun onUnavailable() {
                         isReceiveResponse = true
                         // cellular network is not available, callback
-                        Log.e(TAG, "cellular network is not available")
+                        Log.e(TAG, "onUnavailable: Could not find a cellular network within the timeout.")
                         handleUnAvailableCase()
                     }
                 }
