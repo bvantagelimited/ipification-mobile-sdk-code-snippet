@@ -50,6 +50,8 @@ import java.net.Inet6Address
 
 
 /**
+ * CODE SNIPPET FOR IMPLEMENTING IPIFICATION ON ANDROID
+ *
  * This service handles seamless mobile authentication by leveraging the cellular network identity,
  * enabling passwordless verification without SMS or additional user actions.
 
