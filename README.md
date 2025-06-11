@@ -44,7 +44,7 @@ After this you are able to get `onAvailable()` callback from system and later yo
 val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
         super.onAvailable(network)
-        // TODO: process the connection via this network
+        // TODO: process the connection via this network instance ${network}
     }
     override fun onUnavailable() {
         super.onUnavailable()
