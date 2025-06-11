@@ -11,6 +11,9 @@ The following will allow Android applications using Android API 21+ to use Cellu
 ### Minimum Android 
 Android 5.0 (API 21) and up
 
+### Requirement: 
+User’s device has the mobile network enabled.
+
 ### Permission
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
