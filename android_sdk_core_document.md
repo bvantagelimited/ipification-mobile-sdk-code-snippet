@@ -1,8 +1,16 @@
-# Android SDK 
+# IPification for Android 
 
 This document describes the IPification Android SDK and its usage. The main purpose of the SDK is to provide network-based authentication for mobile users.
+## 1 . Android Requirements & Permissions
 
-### ClearText HTTP supports
+| Item | Details |
+|------|---------|
+| **Minimum OS**            | Android 5.0 (API 21) or higher                                                                                            |
+| **Device prerequisite**    | **Mobile / cellular data must be enabled.**<br/>All IPification requests (and redirects) are forced over the cellular interface. |
+| **Required manifest permissions** | `INTERNET`, `ACCESS_NETWORK_STATE`, `CHANGE_NETWORK_STATE`, `ACCESS_WIFI_STATE` |
+| **Networking library**     | IPification ships with **OkHttp 3 / 4** (socket binding + custom DNS).
+
+### 2. ClearText HTTP supports
 
 This configuration is only required for specific countries and telcos:
 
@@ -15,8 +23,14 @@ This configuration is only required for specific countries and telcos:
 To support authentication with these telcos, which require cleartext network traffic, we need to enable cleartext traffic for their domains.
 https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/xml/ipification_network_security_config.xml
 
+## 3 . Retrieving the User’s Phone Number (Optional)
 
-## Main Flow of Mobile SDK : 
+Need the MSISDN for coverage checking?  
+Use Android’s `Phone Number Hint` API as shown in our snippet:  
+
+<https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android-phone-number-hint.md>
+
+## 4. Main Flow of Mobile SDK : 
 1. Check Coverage
 * Call the Coverage API with the client's `phone` number (GET) through the Cellular Network .
 * Receive a response with: `is_available`- `true`: supported | `false`: not supported
@@ -30,10 +44,10 @@ https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main
 *   (1) -> Parser the response then return the result to client
 *   (2) -> Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
 
-**Note:** All requests need to be performed via `cellular network` interface.
+**Note:** All requests must be performed via the `cellular-network` interface.
 
 
-## Authorization Request (HTTP)
+### Authorization Request (HTTP)
 
 ```
 GET https://api.ipification.com/auth/realms/ipification/protocol/openid-connect/auth?
@@ -62,7 +76,7 @@ Response:
 | consent_timestamp (optional) | The time stamp when consent was accepted by end user. Accepted format is UNIX time stamp in seconds. |
 
 
-## Android Code Snippet
+## 5. Android Code Snippet
 
  ```
  
