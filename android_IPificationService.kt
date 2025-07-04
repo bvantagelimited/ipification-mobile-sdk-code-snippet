@@ -436,8 +436,8 @@ class IPificationCoreService(redirectUri: String?) {
         // enable socket for network
         httpBuilder.socketFactory(network.socketFactory)
 
-        // add dns if needed
-        if (!isIPEndpoints(mRequestUrl)) {
+        // add dns
+        if (network != null) {
             // enable DNS resolver with cellular network
             // enable dns based on cellular network
             val dns = NetworkDns.instance
