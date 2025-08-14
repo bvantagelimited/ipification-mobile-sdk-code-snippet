@@ -16,7 +16,7 @@
         <!-- SmartDigits (TRUID) -->
         <domain includeSubdomains="true">smartdigits.io</domain>
 
-        <!-- Vodafone (UK) -->
+        <!-- Vodafone, O2 (UK) -->
         <domain includeSubdomains="true">vodafone.com</domain>
 
         <!-- SmartFren (ID) -->
