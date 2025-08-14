@@ -7,8 +7,8 @@
         <!-- XL (Indonesia) -->
         <domain includeSubdomains="true">xl.co.id</domain>
 
-        <!-- ADL Digital Services (Thailand) -->
-        <domain includeSubdomains="true">adldigitalservice.com</domain>
+        <!-- ADL Digital Services (Thailand) (changed to https) -->
+<!--         <domain includeSubdomains="true">adldigitalservice.com</domain> -->
 
         <!-- EnStream (Canadian mobile identity provider) -->
         <domain includeSubdomains="true">enstreamidentity.com</domain>
