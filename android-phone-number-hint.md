@@ -1,79 +1,86 @@
+# 📱 Phone Number Retrieval Implementation Guide (Android)
 
-# 📱 Phone Number Hint API Implementation Guide
+This document explains how to retrieve a user's SIM-based phone number on Android devices using two approaches:
 
-Follow the official documentation here: [Phone Number Hint API](https://developers.google.com/identity/phone-number-hint/android)
+1. **Google Phone Number Hint API** — No permission required  
+2. **Permission-based fallback** using `TelephonyManager` and `SubscriptionManager`  
+---
 
-The **Phone Number Hint API** provides a seamless way to retrieve a user’s SIM-based phone numbers **without requiring additional permissions** or **manual input**.
+## 🧭 Overview
 
-<img src="https://github.com/user-attachments/assets/ab967ffb-5fdd-452c-99cc-191a399f9686" alt="Screenshot_20241224_113312" width="300"/>
+| Method | Permissions | Works Without Play Services | Recommended For |
+|---------|--------------|-----------------------------|-----------------|
+| **Option 1: Phone Number Hint API** | ❌ No | ❌ No | Modern devices, best UX |
+| **Option 2: TelephonyManager Fallback** | ✅ Yes | ✅ Yes | Older devices, low-level control |
 
 ---
 
-## 🚀 **Implementation Steps**
+## 🥇 Option 1: Google Phone Number Hint API (No Permissions Required)
 
-### 1. **Add Dependency**
+<img src="https://github.com/user-attachments/assets/ab967ffb-5fdd-452c-99cc-191a399f9686" alt="Screenshot_20241224_113312" width="300"/>
 
-Include the following in your `app/build.gradle` file:
+### 🔍 Description
+
+The [Phone Number Hint API](https://developers.google.com/identity/phone-number-hint/android) displays a **secure, system dialog** listing SIM phone numbers for the user to choose from.  
+It doesn’t require any dangerous permissions and is privacy-safe.
+
+---
+
+### ⚙️ Step 1: Add Dependencies
 
 ```groovy
-// For Phone Number Hint API
+// app/build.gradle
 implementation 'com.google.android.gms:play-services-auth:21.3.0'
 
-// For Parsing and Formatting Phone Numbers (optional)
-implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24") 
+// Optional: for parsing/formatting phone numbers
+implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24")
 ```
 
 ---
 
-### 2. **Create a `GetPhoneNumberHintIntentRequest` Object**
-
-Set up the phone number hint request:
+### 🧩 Step 2: Create a Request and Launch the Hint Picker
 
 ```kotlin
 val request = GetPhoneNumberHintIntentRequest.builder().build()
-
 val signInClient = Identity.getSignInClient(this)
+
 signInClient.getPhoneNumberHintIntent(request)
     .addOnSuccessListener { result: PendingIntent ->
         try {
-            // Launch the hint picker to display phone numbers
             phoneNumberHintIntentResultLauncher.launch(
                 IntentSenderRequest.Builder(result).build()
             )
         } catch (e: Exception) {
-            Log.e("PhoneNumberHint", "Launching the PendingIntent failed", e)
+            Log.e("PhoneHint", "Launching PendingIntent failed", e)
         }
     }
     .addOnFailureListener { e ->
-        Log.e("PhoneNumberHint", "Phone Number Hint failed", e)
+        Log.e("PhoneHint", "Phone Number Hint failed", e)
     }
 ```
 
 ---
 
-### 3. **Handle the Result**
-
-Register an `ActivityResultLauncher` to process the result:
+### 🧾 Step 3: Handle the Result
 
 ```kotlin
 private val phoneNumberHintIntentResultLauncher =
     registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             try {
-                // Extract the phone number from the intent result
                 val phoneNumber = Identity.getSignInClient(requireActivity())
                     .getPhoneNumberFromIntent(result.data)
-                
+
                 val phone = detectCountryAndExtractNationalNumber(phoneNumber)
                 binding.phoneCodeEditText.setText(phone.second)
 
-                Log.d("PhoneHint", "Phone number: $phoneNumber")
+                Log.d("PhoneHint", "Retrieved phone number: $phoneNumber")
             } catch (e: Exception) {
                 Log.e("PhoneHint", "Failed to retrieve phone number: ${e.message}")
                 Toast.makeText(requireContext(), "Failed to retrieve phone number", Toast.LENGTH_SHORT).show()
             }
         } else {
-            Log.e("PhoneHint", "Phone number hint was cancelled or failed")
+            Log.w("PhoneHint", "Hint cancelled or no result.")
             Toast.makeText(requireContext(), "Phone number hint cancelled", Toast.LENGTH_SHORT).show()
         }
     }
@@ -81,102 +88,183 @@ private val phoneNumberHintIntentResultLauncher =
 
 ---
 
-## 🛡️ **Key Notes**
-
-- The API works without requiring **READ_PHONE_STATE** permission.
-- Ensure you handle possible exceptions gracefully.
-- Test on a physical device with an active SIM card.
-
-For more details, refer to the [official documentation](https://developers.google.com/identity/phone-number-hint/android). 🚀
-
-
-## ✅ **Complete example**:
+### 🧠 Optional: Normalize with libphonenumber
 
 ```kotlin
-import android.app.PendingIntent
-import android.content.IntentSender
-import android.util.Log
-import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.fragment.app.Fragment
-import com.google.android.gms.auth.api.identity.GetPhoneNumberHintIntentRequest
-import com.google.android.gms.auth.api.identity.Identity
-
-class PhoneNumberHintFragment : Fragment() {
-
-    private lateinit var phoneNumberHintIntentResultLauncher: ActivityResultLauncher<IntentSenderRequest>
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Initialize ActivityResultLauncher once
-        phoneNumberHintIntentResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-                if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                    try {
-                        val phoneNumber = Identity.getSignInClient(requireActivity())
-                            .getPhoneNumberFromIntent(result.data)
-                        
-                        val phone = detectCountryAndExtractNationalNumber(phoneNumber)
-                        binding.phoneCodeEditText.setText(phone.second)
-
-                        Log.d("PhoneHint", "Phone number: $phoneNumber")
-                    } catch (e: Exception) {
-                        Log.e("PhoneHint", "Failed to retrieve phone number: ${e.message}")
-                        Toast.makeText(requireContext(), "Failed to retrieve phone number", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Log.e("PhoneHint", "Phone number hint was cancelled or failed")
-                    Toast.makeText(requireContext(), "Phone number hint cancelled", Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
-
-    fun showPhoneNumberHint() {
-        try {
-            val request: GetPhoneNumberHintIntentRequest = GetPhoneNumberHintIntentRequest.builder().build()
-
-            Identity.getSignInClient(requireActivity())
-                .getPhoneNumberHintIntent(request)
-                .addOnSuccessListener { result: PendingIntent ->
-                    try {
-                        phoneNumberHintIntentResultLauncher.launch(
-                            IntentSenderRequest.Builder(result).build()
-                        )
-                    } catch (e: IntentSender.SendIntentException) {
-                        Log.e("PhoneHint", "Launching the PendingIntent failed: ${e.message}")
-                        Toast.makeText(requireContext(), "Failed to launch phone number hint", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Log.e("PhoneHint", "Phone Number Hint failed: ${e.message}")
-                    Toast.makeText(requireContext(), "Failed to retrieve phone number hint", Toast.LENGTH_LONG).show()
-                }
-        } catch (e: Exception) {
-            Log.e("PhoneHint", "Unexpected error: ${e.message}")
-            Toast.makeText(requireContext(), "An unexpected error occurred", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, String?> {
-        val phoneUtil = PhoneNumberUtil.getInstance()
-        return try {
-            // Parse the phone number without specifying a region
-            val parsedNumber: Phonenumber.PhoneNumber = phoneUtil.parse(phoneNumber, null)
-    
-            // Extract region and national number
-            val countryCode = phoneUtil.getRegionCodeForNumber(parsedNumber)
-            val nationalNumber = parsedNumber.nationalNumber.toString()
-    
-            Log.d("PhoneHint", "Detected country: $countryCode, National number: $nationalNumber")
-    
-            Pair(countryCode, nationalNumber)
-        } catch (e: NumberParseException) {
-            Log.e("PhoneHint", "Failed to parse phone number: ${e.message}")
-            Pair(null, null)
-        }
+fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, String?> {
+    val phoneUtil = PhoneNumberUtil.getInstance()
+    return try {
+        val parsed = phoneUtil.parse(phoneNumber, null)
+        val region = phoneUtil.getRegionCodeForNumber(parsed)
+        val national = parsed.nationalNumber.toString()
+        Pair(region, national)
+    } catch (e: NumberParseException) {
+        Log.e("PhoneHint", "Number parse failed: ${e.message}")
+        Pair(null, null)
     }
 }
 ```
+
+---
+
+### ✅ Advantages
+
+- Zero runtime permissions required  
+- Secure and privacy-friendly flow  
+- Automatically handles multiple SIMs  
+- Compliant with Android Play policy  
+
+---
+
+### ⚠️ Limitations
+
+- Requires Google Play Services  
+- Returns `null` if unsupported or unavailable or user cancels  
+
+---
+
+## 🥈 Option 2: Permission-Based Fallback (READ_PHONE_STATE + READ_PHONE_NUMBERS)
+
+
+---
+
+### 🔧 Manifest Permissions
+
+```xml
+<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+<uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+```
+<img src="https://github.com/user-attachments/assets/5a0f2f7b-7717-455b-856c-63e392e32fa8" alt="Screenshot_20241224_113312" width="300"/>
+<img src="https://github.com/user-attachments/assets/dfd04470-07e1-484f-9d9e-b49685ea8da4" alt="Screenshot_20241224_113312" width="300"/>
+---
+
+### 🧩 Kotlin Implementation
+
+```kotlin
+val PHONE_PERMS = arrayOf(
+  Manifest.permission.READ_PHONE_STATE,
+  Manifest.permission.READ_PHONE_NUMBERS
+)
+
+fun requestPermsThenFetch() {
+  if (hasAllPhonePerms(context)) {
+    fetchPhoneNumberNow(context) { msisdn ->
+      if (!msisdn.isNullOrBlank()) {
+        viewModel.onPhoneNumberFromHint(msisdn)
+        Log.d("PhoneFetch", "Perm-accepted; fetched: $msisdn")
+      } else {
+        val dial = Util.getSystemDialCode(context)
+        viewModel.onCountryCodeFromHint(dial)
+        Log.d("PhoneFetch", "Perm-accepted; number unavailable. Fallback dial: $dial")
+      }
+    }
+  } else {
+    permLauncher.launch(PHONE_PERMS)
+  }
+}
+
+val permLauncher = rememberLauncherForActivityResult(
+  ActivityResultContracts.RequestMultiplePermissions()
+) { grants ->
+  val granted = PHONE_PERMS.all { grants[it] == true }
+  if (granted) {
+    fetchPhoneNumberNow(context) { msisdn ->
+      if (!msisdn.isNullOrBlank()) {
+        viewModel.onPhoneNumberFromHint(msisdn)
+      } else {
+        val dial = Util.getSystemDialCode(context)
+        viewModel.onCountryCodeFromHint(dial)
+      }
+    }
+  } else {
+    val dial = Util.getSystemDialCode(context)
+    viewModel.onCountryCodeFromHint(dial)
+  }
+}
+
+private fun hasAllPhonePerms(ctx: Context): Boolean =
+  ContextCompat.checkSelfPermission(ctx, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED &&
+  ContextCompat.checkSelfPermission(ctx, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED
+```
+
+---
+
+### 📞 Fetch Logic (Telephony + SubscriptionManager)
+
+```kotlin
+private fun fetchPhoneNumberNow(context: Context, onNumber: (String?) -> Unit) {
+  if (!hasAllPhonePerms(context)) {
+    Log.e("PhoneFetch", "No permission granted — aborting fetch.")
+    onNumber(null)
+    return
+  }
+
+  val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+  val sm = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+
+  Log.d("PhoneFetch", "📱 Starting phone number fetch...")
+
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    try {
+      val subs = sm.activeSubscriptionInfoList
+      if (!subs.isNullOrEmpty()) {
+        for (sub in subs) {
+          val msisdn = try {
+            sm.getPhoneNumber(sub.subscriptionId)
+          } catch (se: SecurityException) {
+            Log.e("PhoneFetch", "SecurityException: ${se.message}")
+            null
+          }
+
+          if (!msisdn.isNullOrBlank()) {
+            Log.d("PhoneFetch", "getPhoneNumber(subId=${sub.subscriptionId}) = $msisdn")
+            onNumber(msisdn)
+            return
+          }
+        }
+      } else {
+        val msisdn = sm.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID)
+        Log.d("PhoneFetch", "No active subs; fallback DEFAULT_SUBSCRIPTION_ID: $msisdn")
+        onNumber(msisdn)
+        return
+      }
+    } catch (se: SecurityException) {
+      Log.e("PhoneFetch", "activeSubscriptionInfoList error: ${se.message}")
+    }
+  }
+
+  val fallback = try { tm.line1Number } catch (e: SecurityException) { null }
+
+  if (!fallback.isNullOrBlank()) {
+    Log.d("PhoneFetch", "Fallback TelephonyManager.line1Number = $fallback")
+  } else {
+    Log.e("PhoneFetch", "line1Number is null or blank.")
+  }
+
+  onNumber(fallback)
+}
+```
+
+---
+
+### ✅ Advantages
+
+- Works on any Android version  
+- Provides direct access to carrier/MSISDN info  
+- Can enumerate multiple SIMs  
+
+---
+
+### ⚠️ Limitations
+
+- Needs explicit permissions  
+- May return `null` depending on carrier  
+- Should be used **only as fallback**
+
+---
+
+
+## ✅ Conclusion
+
+- Use the **Hint API** first for the best UX and privacy.  
+- Fallback to the **permission-based fetch** only when needed.  
