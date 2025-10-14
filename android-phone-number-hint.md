@@ -123,7 +123,7 @@ fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, St
 
 ---
 
-## 🥈 Option 2: Permission-Based Fallback (READ_PHONE_STATE + READ_PHONE_NUMBERS)
+## 🥈 Option 2: TelephonyManager Fallback (READ_PHONE_STATE + READ_PHONE_NUMBERS)
 
 
 ---
@@ -131,7 +131,20 @@ fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, St
 ### 🔧 Manifest Permissions
 
 ```xml
+<!--
+  Required to read basic telephony information such as the device's network state
+  and active subscriptions.
+  This permission is needed to call:
+    - TelephonyManager.getLine1Number()      → retrieves the device's phone number (MSISDN)
+    - SubscriptionManager.getActiveSubscriptionInfoList() → lists SIMs/subscriptions
+-->
 <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+<!--
+  Required on Android 13 (API 33 / Tiramisu) and above to access the user's phone number
+  via TelephonyManager.getPhoneNumber(int subId).
+  Without this permission, even READ_PHONE_STATE cannot return the MSISDN anymore.
+-->
 <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
 ```
 <img src="https://github.com/user-attachments/assets/5a0f2f7b-7717-455b-856c-63e392e32fa8" alt="Screenshot_20241224_113312" width="300"/>
