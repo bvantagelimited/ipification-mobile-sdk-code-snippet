@@ -8,10 +8,10 @@ This document explains how to retrieve a user's SIM-based phone number on Androi
 
 ## 🧭 Overview
 
-| Method | Permissions | Works Without Play Services | Recommended For |
-|---------|--------------|-----------------------------|-----------------|
-| **Option 1: Phone Number Hint API** | ❌ No | ❌ No | Modern devices, best UX |
-| **Option 2: TelephonyManager Fallback** | ✅ Yes | ✅ Yes | Older devices, low-level control |
+| Method | Permissions | Works Without Play Services |
+|---------|--------------|-----------------------------|
+| **Option 1: Phone Number Hint API** | ❌ No | ❌ No | 
+| **Option 2: TelephonyManager Fallback** | ✅ Yes | ✅ Yes |
 
 ---
 
