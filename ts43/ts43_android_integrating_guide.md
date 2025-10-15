@@ -454,7 +454,5 @@ Content-Type: application/json
 
 
 
-This documentation is provided by IPification. All rights reserved.
 
 © 2025 IPification. Implementation code examples are provided as-is for integration purposes.
-
