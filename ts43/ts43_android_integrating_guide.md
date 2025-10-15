@@ -34,9 +34,9 @@ TS43 CIBA Flow Diagram:
 
 ### Key Stages
 
-**IMPORTANT**: The Android app only calls 2 backend APIs: `/ciba/auth` and `/token`. The app does NOT call IPification Service directly. All communication with IPification Service is handled by your backend.
+**IMPORTANT**: The Android app only calls 2 backend APIs: `/ts43/auth` and `/token`. The app does NOT call IPification Service directly. All communication with IPification Service is handled by your backend.
 
-1. **App → Backend: CIBA Authentication Request** (`/ciba/auth`): App initiates authentication with phone number  
+1. **App → Backend: CIBA Authentication Request** (`/ts43/auth`): App initiates authentication with phone number  
 2. **Backend → IPification Service**: Backend forwards request to IPification CIBA endpoint  
 3. **Backend → App: Authentication Response**: Backend returns `auth_req_id` and `digital_request`  
 4. **App → Credential Manager: Request Credential**: App passes `digital_request` to Android Credential Manager  
@@ -114,7 +114,7 @@ object TS43Config {
     var BACKEND_URL = BACKEND_URL_SANDBOX // Change to PRODUCTION for live
     
     // Backend API Endpoints (only 2 endpoints needed)
-    val CIBA_AUTH_ENDPOINT = "$BACKEND_URL/ciba/auth"
+    val CIBA_AUTH_ENDPOINT = "$BACKEND_URL/ts43/auth"
     val TOKEN_ENDPOINT = "$BACKEND_URL/token"
     
     // Your client ID
@@ -124,7 +124,7 @@ object TS43Config {
 
 ### Step 3: Implement CIBA Authentication Request
 
-**This calls your backend `/ciba/auth` endpoint, which then communicates with IPification Service.**
+**This calls your backend `/ts43auth` endpoint, which then communicates with IPification Service.**
 
 ```kotlin
 suspend fun initiateCIBAAuth(
@@ -331,7 +331,7 @@ private fun parseTokenResponse(jsonResponse: String): TokenResponse {
 
 ### 1. CIBA Authentication Endpoint
 
-**POST** `/ciba/auth`
+**POST** `/ts43/auth`
 
 Your Android app calls this backend endpoint to initiate authentication. Your backend then communicates with IPification Service.
 
@@ -344,8 +344,7 @@ Content-Type: application/json
 ```json
 {
   "client_id": "your_client_id",
-  "login_hint": "+381123456789", // for VerifyPhoneNumber
-  "scope": "openid mobile_id",
+  "login_hint": "381123456789", // for VerifyPhoneNumber
   "carrier_hint": "310410",
   "scope": "openid ip:phone_verify",
   "operator": "VerifyPhoneNumber"
