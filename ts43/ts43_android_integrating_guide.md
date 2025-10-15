@@ -114,7 +114,7 @@ object TS43Config {
     var BACKEND_URL = BACKEND_URL_SANDBOX // Change to PRODUCTION for live
     
     // Backend API Endpoints (only 2 endpoints needed)
-    val CIBA_AUTH_ENDPOINT = "$BACKEND_URL/ts43/auth"
+    val TS43_AUTH_ENDPOINT = "$BACKEND_URL/ts43/auth"
     val TOKEN_ENDPOINT = "$BACKEND_URL/ts43/token"
     
     // Your client ID
@@ -127,12 +127,12 @@ object TS43Config {
 **This calls your backend `/ts43auth` endpoint, which then communicates with IPification Service.**
 
 ```kotlin
-suspend fun initiateCIBAAuth(
+suspend fun initiateTS43Auth(
     phoneNumber: String,
     scope: String = "openid ip:phone",
     clientId: String
-): CIBAAuthResponse {
-    val url = TS43Config.CIBA_AUTH_ENDPOINT
+): TS43AuthResponse {
+    val url = TS43Config.TS43_AUTH_ENDPOINT
     
     // Get carrier information
     val carrierHint = getCarrierHint() // Your implementation
@@ -154,11 +154,11 @@ suspend fun initiateCIBAAuth(
         
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("CIBA Auth failed: ${response.code}")
+                throw IOException("TS43 Auth failed: ${response.code}")
             }
             
             val responseBody = response.body?.string() ?: ""
-            parseCIBAAuthResponse(responseBody)
+            parseTS43AuthResponse(responseBody)
         }
     }
 }
@@ -169,16 +169,16 @@ suspend fun initiateCIBAAuth(
 **Your backend returns both `auth_req_id` and `digital_request` in a single response.**
 
 ```kotlin
-data class CIBAAuthResponse(
+data class TS43AuthResponse(
     val authReqId: String,
     val digitalRequest: String,
     val expiresIn: Int,
     val interval: Int
 )
 
-private fun parseCIBAAuthResponse(jsonResponse: String): CIBAAuthResponse {
+private fun parseTS43AuthResponse(jsonResponse: String): TS43AuthResponse {
     val json = JSONObject(jsonResponse)
-    return CIBAAuthResponse(
+    return TS43AuthResponse(
         authReqId = json.getString("auth_req_id"),
         digitalRequest = json.getJSONObject("digital_request").toString(),
         expiresIn = json.optInt("expires_in", 120),
@@ -190,9 +190,9 @@ private fun parseCIBAAuthResponse(jsonResponse: String): CIBAAuthResponse {
 ### Step 5: Extract Digital Request
 
 ```kotlin
-fun extractDigitalRequest(cibaResponse: CIBAAuthResponse): String {
-    // The digital_request is already included in the CIBA auth response
-    return cibaResponse.digitalRequest
+fun extractDigitalRequest(ts43Response: TS43AuthResponse): String {
+    // The digital_request is already included in the TS43 auth response
+    return ts43Response.digitalRequest
 }
 ```
 
