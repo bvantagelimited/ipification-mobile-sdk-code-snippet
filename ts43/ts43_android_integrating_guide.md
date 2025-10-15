@@ -34,14 +34,14 @@ TS43 CIBA Flow Diagram:
 
 ### Key Stages
 
-**IMPORTANT**: The Android app only calls 2 backend APIs: `/ts43/auth` and `/token`. The app does NOT call IPification Service directly. All communication with IPification Service is handled by your backend.
+**IMPORTANT**: The Android app only calls 2 backend APIs: `/ts43/auth` and `/ts43/token`. The app does NOT call IPification Service directly. All communication with IPification Service is handled by your backend.
 
 1. **App → Backend: CIBA Authentication Request** (`/ts43/auth`): App initiates authentication with phone number  
 2. **Backend → IPification Service**: Backend forwards request to IPification CIBA endpoint  
 3. **Backend → App: Authentication Response**: Backend returns `auth_req_id` and `digital_request`  
 4. **App → Credential Manager: Request Credential**: App passes `digital_request` to Android Credential Manager  
 5. **Credential Manager → App: VP Token**: Credential Manager returns `vp_token` to App  
-6. **App → Backend: Token Exchange** (`/token`): App sends `vp_token` and `auth_req_id` to backend  
+6. **App → Backend: Token Exchange** (`/ts43/token`): App sends `vp_token` and `auth_req_id` to backend  
 7. **Backend → IPification Service**: Backend validates `vp_token` and exchanges for tokens  
 8. **Backend → App: Token Response**: Backend returns result including `phone_number_verified`
 9. **Verification Complete**: User is authenticated with verified phone number  
@@ -115,7 +115,7 @@ object TS43Config {
     
     // Backend API Endpoints (only 2 endpoints needed)
     val CIBA_AUTH_ENDPOINT = "$BACKEND_URL/ts43/auth"
-    val TOKEN_ENDPOINT = "$BACKEND_URL/token"
+    val TOKEN_ENDPOINT = "$BACKEND_URL/ts43/token"
     
     // Your client ID
     var CLIENT_ID = "your_client_id"
@@ -247,7 +247,7 @@ private fun extractVpToken(credentialJson: String): String? {
 
 ### Step 8: Token Exchange (includes VP Token validation)
 
-**Send both `vp_token` and `auth_req_id` to your backend `/token` endpoint. Your backend handles validation with IPification Service.**
+**Send both `vp_token` and `auth_req_id` to your backend `/ts43/token` endpoint. Your backend handles validation with IPification Service.**
 
 ```kotlin
 suspend fun exchangeToken(
@@ -413,7 +413,7 @@ Content-Type: application/json
 
 ### 2. Token Exchange Endpoint
 
-**POST** `/token`
+**POST** `/ts43/token`
 
 Your Android app calls this backend endpoint to exchange the `vp_token` and `auth_req_id` for final tokens. Your backend validates the `vp_token` with IPification Service and returns the tokens.
 
