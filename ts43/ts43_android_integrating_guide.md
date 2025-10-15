@@ -358,7 +358,7 @@ Content-Type: application/json
 | `client_id` | string | Yes | Your OAuth client ID |
 | `login_hint` | string | Yes | The phone number to verify (E.164 format) |
 | `scope` | string | Yes | OAuth scopes (e.g., "openid phone_verify") |
-| `carrier_hint` | string | Yes | Mobile Network Code + Mobile Country Code (MNC+MCC) |
+| `carrier_hint` | string | No | Mobile Network Code + Mobile Country Code (MNC+MCC) |
 | `operator` | string | Yes | to Verify Input Phone or Get Phone Number |
 #### Response (Success - 200 OK)
 ```json
