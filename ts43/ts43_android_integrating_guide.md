@@ -250,7 +250,6 @@ private fun extractVpToken(credentialJson: String): String? {
 ### Step 8: Token Exchange (includes VP Token validation)
 
 **Send both `vp_token` and `auth_req_id` to your backend `/token` endpoint. Your backend handles validation with IPification Service.**
-```
 
 ```kotlin
 suspend fun exchangeToken(
