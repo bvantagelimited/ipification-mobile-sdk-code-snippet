@@ -205,56 +205,97 @@ private fun hasAllPhonePerms(ctx: Context): Boolean =
 ### 📞 Fetch Logic (Telephony + SubscriptionManager)
 
 ```kotlin
-private fun fetchPhoneNumberNow(context: Context, onNumber: (String?) -> Unit) {
+
+@SuppressLint("MissingPermission")
+private fun fetchPhoneNumberNow(
+  context: Context,
+  onNumber: (String?, String?) -> Unit,  // (phoneNumber, countryISO)
+  onNumbers: (List<Pair<String, String>>) -> Unit,  // List of (phoneNumber, countryISO) pairs
+) {
+  // ✅ Guard: satisfy lint and avoid SecurityException
   if (!hasAllPhonePerms(context)) {
-    Log.e("PhoneFetch", "No permission granted — aborting fetch.")
-    onNumber(null)
+    logPhoneFetch("❌ No permission granted — aborting fetch.", level = "w")
+    onNumber(null, null)
     return
   }
 
   val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
   val sm = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
 
-  Log.d("PhoneFetch", "📱 Starting phone number fetch...")
+  // Get system country code as fallback
+  val systemCountryISO = Locale.getDefault().country.uppercase()
 
+  logPhoneFetch("📱 Starting phone number fetch...")
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      logPhoneFetch("DEFAULT_SUBSCRIPTION_ID  ${SubscriptionManager.DEFAULT_SUBSCRIPTION_ID}...")
+  }
+  // function from IPification SDK
+  val activeSubId = DeviceUtils.getInstance(context).activeSimOperator().getSubID()
+  logPhoneFetch("activeSubId  ${activeSubId}...")
+  // Android 13+ path — requires READ_PHONE_STATE and READ_PHONE_NUMBERS
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    logPhoneFetch("Running on Android 13+ (TIRAMISU). Trying SubscriptionManager.getPhoneNumber()...")
     try {
       val subs = sm.activeSubscriptionInfoList
-      if (!subs.isNullOrEmpty()) {
-        for (sub in subs) {
-          val msisdn = try {
-            sm.getPhoneNumber(sub.subscriptionId)
-          } catch (se: SecurityException) {
-            Log.e("PhoneFetch", "SecurityException: ${se.message}")
-            null
-          }
+      logPhoneFetch("Active subscriptions count: ${subs?.size ?: 0}")
 
-          if (!msisdn.isNullOrBlank()) {
-            Log.d("PhoneFetch", "getPhoneNumber(subId=${sub.subscriptionId}) = $msisdn")
-            onNumber(msisdn)
-            return
-          }
+      if (!subs.isNullOrEmpty()) {
+        // Try to get active SIM phone number first
+        val activeMsisdn = try {
+          sm.getPhoneNumber(activeSubId)
+        } catch (se: SecurityException) {
+          logPhoneFetch("⚠️ SecurityException on active SIM getPhoneNumber(): ${se.message}", level = "e")
+          null
         }
+
+        if (!activeMsisdn.isNullOrBlank()) {
+          // Get country ISO for active SIM
+          val activeCountryIso = subs.find { it.subscriptionId == activeSubId }?.countryIso?.uppercase() ?: systemCountryISO
+          logPhoneFetch("✅ Got phone number from active SIM (subId=$activeSubId): $activeMsisdn, countryISO=$activeCountryIso", level = "i")
+          onNumber(activeMsisdn, activeCountryIso)
+          return
+        }
+
+        // Active SIM didn't return number, collect all available numbers
+
       } else {
         val msisdn = sm.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID)
-        Log.d("PhoneFetch", "No active subs; fallback DEFAULT_SUBSCRIPTION_ID: $msisdn")
-        onNumber(msisdn)
+        logPhoneFetch("⚠️ No active subscriptions found. get DEFAULT_SUBSCRIPTION_ID: $msisdn, countryISO=$systemCountryISO", level = "w")
+        onNumber(msisdn, systemCountryISO)
         return
       }
     } catch (se: SecurityException) {
-      Log.e("PhoneFetch", "activeSubscriptionInfoList error: ${se.message}")
+      logPhoneFetch("⚠️ SecurityException reading activeSubscriptionInfoList: ${se.message}", level = "e")
     }
+  } else {
+    logPhoneFetch("Running on Android <13 — skipping SubscriptionManager.getPhoneNumber().")
+  }
+  var tmm = tm.createForSubscriptionId(activeSubId)
+  // 📞 Fallback: TelephonyManager.line1Number with country ISO from active SIM
+  val fallbackCountryISO = try {
+    val subs = sm.activeSubscriptionInfoList
+    subs?.find { it.subscriptionId == activeSubId }?.countryIso?.uppercase() ?: systemCountryISO
+  } catch (e: Exception) {
+    logPhoneFetch("Could not get country ISO from active SIM, using system default", level = "w")
+    systemCountryISO
   }
 
-  val fallback = try { tm.line1Number } catch (e: SecurityException) { null }
+  val fallback = try {
+    tmm.line1Number
+  } catch (se: SecurityException) {
+    logPhoneFetch("⚠️ SecurityException reading line1Number: ${se.message}", level = "e")
+    null
+  }
 
   if (!fallback.isNullOrBlank()) {
-    Log.d("PhoneFetch", "Fallback TelephonyManager.line1Number = $fallback")
+    logPhoneFetch("✅ Got phone number from TelephonyManager: $fallback, countryISO=$fallbackCountryISO", level = "i")
+    onNumber(fallback, fallbackCountryISO)
+    return
   } else {
-    Log.e("PhoneFetch", "line1Number is null or blank.")
+    logPhoneFetch("❌ TelephonyManager.line1Number returned null/blank", level = "w")
   }
 
-  onNumber(fallback)
+  onNumber(fallback, fallbackCountryISO)
 }
 ```
 
