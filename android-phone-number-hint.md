@@ -229,7 +229,7 @@ private fun fetchPhoneNumberNow(
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       logPhoneFetch("DEFAULT_SUBSCRIPTION_ID  ${SubscriptionManager.DEFAULT_SUBSCRIPTION_ID}...")
   }
-
+  // function from IPification SDK
   val activeSubId = DeviceUtils.getInstance(context).activeSimOperator().getSubID()
   logPhoneFetch("activeSubId  ${activeSubId}...")
   // Android 13+ path — requires READ_PHONE_STATE and READ_PHONE_NUMBERS
