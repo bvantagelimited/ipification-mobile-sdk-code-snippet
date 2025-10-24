@@ -255,9 +255,6 @@ private fun fetchPhoneNumberNow(
           onNumber(activeMsisdn, activeCountryIso)
           return
         }
-
-        // Active SIM didn't return number, collect all available numbers
-
       } else {
         val msisdn = sm.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID)
         logPhoneFetch("⚠️ No active subscriptions found. get DEFAULT_SUBSCRIPTION_ID: $msisdn, countryISO=$systemCountryISO", level = "w")
