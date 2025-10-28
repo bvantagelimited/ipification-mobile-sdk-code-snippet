@@ -30,6 +30,7 @@
 
         <!-- India -->
         <domain includeSubdomains="true">jio.com</domain>
-
+        <domain includeSubdomains="true">jiolabs.com</domain>
+        
     </domain-config>
 </network-security-config>
