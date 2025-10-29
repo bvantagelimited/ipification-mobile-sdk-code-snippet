@@ -142,7 +142,7 @@ suspend fun initiateTS43Auth(
         put("login_hint", phoneNumber)
         put("carrier_hint", carrierHint)
         put("scope", scope) // "openid ip:phone_verify" or "openid ip:phone"
-        put("operator", operator) // "VerifyPhoneNumber" or "GetPhoneNumber"
+        put("operation", operation) // "VerifyPhoneNumber" or "GetPhoneNumber"
     }.toString()
     
     return withContext(Dispatchers.IO) {
@@ -347,7 +347,7 @@ Content-Type: application/json
   "login_hint": "381123456789", // for VerifyPhoneNumber
   "carrier_hint": "310410",
   "scope": "openid ip:phone_verify",
-  "operator": "VerifyPhoneNumber"
+  "operation": "VerifyPhoneNumber"
 }
 ```
 
@@ -359,7 +359,7 @@ Content-Type: application/json
 | `login_hint` | string | Yes | The phone number to verify (E.164 format) |
 | `scope` | string | Yes | OAuth scopes (e.g., "openid phone_verify") |
 | `carrier_hint` | string | No | Mobile Network Code + Mobile Country Code (MNC+MCC) |
-| `operator` | string | Yes | to Verify Input Phone or Get Phone Number |
+| `operation` | string | Yes | to Verify Input Phone or Get Phone Number |
 #### Response (Success - 200 OK)
 ```json
 {
