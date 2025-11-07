@@ -343,9 +343,9 @@ Content-Type: application/json
 #### Request Body
 ```json
 {
-  "client_id": "your_client_id",
-  "login_hint": "381123456789", // for VerifyPhoneNumber
-  "carrier_hint": "310410",
+  "client_id": your_client_id,
+  "login_hint": phoneNumber, // for VerifyPhoneNumber
+  "carrier_hint": carrier_hint_value,
   "scope": "openid ip:phone_verify",
   "operation": "VerifyPhoneNumber"
 }
