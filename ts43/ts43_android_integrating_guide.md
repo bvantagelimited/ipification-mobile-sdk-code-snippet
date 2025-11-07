@@ -46,6 +46,8 @@ TS43 CIBA Flow Diagram:
 8. **Backend → App: Token Response**: Backend returns result including `phone_number_verified`
 9. **Verification Complete**: User is authenticated with verified phone number  
 
+**Android official doc:** https://developer.android.com/identity/digital-credentials/phone-number-verification
+
 ---
 
 ## Prerequisites
