@@ -356,7 +356,7 @@ Content-Type: application/json
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `client_id` | string | Yes | Your OAuth client ID |
-| `login_hint` | string | Yes | The phone number to verify (E.164 format) |
+| `login_hint` | string | Yes | The phone number to verify (E.164 format) for VerifyPhoneNumber, put `anonymous` for GetPhoneNumber |
 | `scope` | string | Yes | OAuth scopes (e.g., "openid phone_verify") |
 | `carrier_hint` | string | No | Mobile Network Code + Mobile Country Code (MNC+MCC) |
 | `operation` | string | Yes | to Verify Input Phone or Get Phone Number |
