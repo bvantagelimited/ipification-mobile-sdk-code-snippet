@@ -6,7 +6,7 @@ This document explains how to retrieve a user's SIM-based phone number on Androi
 2. **Permission-based fallback** using `TelephonyManager` and `SubscriptionManager`  
 ---
 
-## 🧭 Overview
+## Overview
 
 | Method | Permissions | Works Without Play Services |
 |---------|--------------|-----------------------------|
@@ -15,7 +15,7 @@ This document explains how to retrieve a user's SIM-based phone number on Androi
 
 ---
 
-## 🥇 Option 1: Google Phone Number Hint API (No Permissions Required)
+## Option 1: Google Phone Number Hint API (No Permissions Required)
 
 <img src="https://github.com/user-attachments/assets/ab967ffb-5fdd-452c-99cc-191a399f9686" alt="Screenshot_20241224_113312" width="300"/>
 
@@ -26,7 +26,7 @@ It doesn’t require any dangerous permissions and is privacy-safe.
 
 ---
 
-### ⚙️ Step 1: Add Dependencies
+### Step 1: Add Dependencies
 
 ```groovy
 // app/build.gradle
@@ -38,7 +38,7 @@ implementation("com.googlecode.libphonenumber:libphonenumber:8.13.24")
 
 ---
 
-### 🧩 Step 2: Create a Request and Launch the Hint Picker
+### Step 2: Create a Request and Launch the Hint Picker
 
 ```kotlin
 val request = GetPhoneNumberHintIntentRequest.builder().build()
@@ -88,7 +88,7 @@ private val phoneNumberHintIntentResultLauncher =
 
 ---
 
-### 🧠 Optional: Normalize with libphonenumber
+### Optional: Normalize with libphonenumber
 
 ```kotlin
 fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, String?> {
@@ -123,12 +123,12 @@ fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, St
 
 ---
 
-## 🥈 Option 2: TelephonyManager Fallback (READ_PHONE_STATE + READ_PHONE_NUMBERS)
+## Option 2: TelephonyManager Fallback (READ_PHONE_STATE + READ_PHONE_NUMBERS)
 
 
 ---
 
-### 🔧 Manifest Permissions
+### Manifest Permissions
 
 ```xml
 <!--
@@ -151,7 +151,7 @@ fun detectCountryAndExtractNationalNumber(phoneNumber: String): Pair<String?, St
 <img src="https://github.com/user-attachments/assets/dfd04470-07e1-484f-9d9e-b49685ea8da4" alt="Screenshot_20241224_113312" width="300"/>
 ---
 
-### 🧩 Kotlin Implementation
+### Kotlin Implementation
 
 ```kotlin
 val PHONE_PERMS = arrayOf(
@@ -166,9 +166,7 @@ fun requestPermsThenFetch() {
         viewModel.onPhoneNumberFromHint(msisdn)
         Log.d("PhoneFetch", "Perm-accepted; fetched: $msisdn")
       } else {
-        val dial = Util.getSystemDialCode(context)
-        viewModel.onCountryCodeFromHint(dial)
-        Log.d("PhoneFetch", "Perm-accepted; number unavailable. Fallback dial: $dial")
+        Log.d("PhoneFetch", "Cannot fetch the number")
       }
     }
   } else {
@@ -198,23 +196,30 @@ val permLauncher = rememberLauncherForActivityResult(
 private fun hasAllPhonePerms(ctx: Context): Boolean =
   ContextCompat.checkSelfPermission(ctx, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED &&
   ContextCompat.checkSelfPermission(ctx, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED
+
+private fun logPhoneFetch(message: String, level: String = "d") {
+  when (level) {
+    "e" -> Log.e("PhoneFetch", message)
+    "w" -> Log.w("PhoneFetch", message)
+    "i" -> Log.i("PhoneFetch", message)
+    else -> Log.d("PhoneFetch", message)
+  }
+}
 ```
 
 ---
 
-### 📞 Fetch Logic (Telephony + SubscriptionManager)
+### Fetch Logic (Telephony + SubscriptionManager)
 
 ```kotlin
 
-@SuppressLint("MissingPermission")
 private fun fetchPhoneNumberNow(
   context: Context,
   onNumber: (String?, String?) -> Unit,  // (phoneNumber, countryISO)
-  onNumbers: (List<Pair<String, String>>) -> Unit,  // List of (phoneNumber, countryISO) pairs
 ) {
-  // ✅ Guard: satisfy lint and avoid SecurityException
+  // Guard: satisfy lint and avoid SecurityException
   if (!hasAllPhonePerms(context)) {
-    logPhoneFetch("❌ No permission granted — aborting fetch.", level = "w")
+    logPhoneFetch("No permission granted — aborting fetch.", level = "w")
     onNumber(null, null)
     return
   }
@@ -244,31 +249,31 @@ private fun fetchPhoneNumberNow(
         val activeMsisdn = try {
           sm.getPhoneNumber(activeSubId)
         } catch (se: SecurityException) {
-          logPhoneFetch("⚠️ SecurityException on active SIM getPhoneNumber(): ${se.message}", level = "e")
+          logPhoneFetch("SecurityException on active SIM getPhoneNumber(): ${se.message}", level = "e")
           null
         }
 
         if (!activeMsisdn.isNullOrBlank()) {
           // Get country ISO for active SIM
           val activeCountryIso = subs.find { it.subscriptionId == activeSubId }?.countryIso?.uppercase() ?: systemCountryISO
-          logPhoneFetch("✅ Got phone number from active SIM (subId=$activeSubId): $activeMsisdn, countryISO=$activeCountryIso", level = "i")
+          logPhoneFetch("Got phone number from active SIM (subId=$activeSubId): $activeMsisdn, countryISO=$activeCountryIso", level = "i")
           onNumber(activeMsisdn, activeCountryIso)
           return
         }
       } else {
         val msisdn = sm.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID)
-        logPhoneFetch("⚠️ No active subscriptions found. get DEFAULT_SUBSCRIPTION_ID: $msisdn, countryISO=$systemCountryISO", level = "w")
+        logPhoneFetch("No active subscriptions found. get DEFAULT_SUBSCRIPTION_ID: $msisdn, countryISO=$systemCountryISO", level = "e")
         onNumber(msisdn, systemCountryISO)
         return
       }
     } catch (se: SecurityException) {
-      logPhoneFetch("⚠️ SecurityException reading activeSubscriptionInfoList: ${se.message}", level = "e")
+      logPhoneFetch("SecurityException reading activeSubscriptionInfoList: ${se.message}", level = "e")
     }
   } else {
     logPhoneFetch("Running on Android <13 — skipping SubscriptionManager.getPhoneNumber().")
   }
   var tmm = tm.createForSubscriptionId(activeSubId)
-  // 📞 Fallback: TelephonyManager.line1Number with country ISO from active SIM
+  // Get country ISO from active SIM for line1Number result
   val fallbackCountryISO = try {
     val subs = sm.activeSubscriptionInfoList
     subs?.find { it.subscriptionId == activeSubId }?.countryIso?.uppercase() ?: systemCountryISO
@@ -276,20 +281,20 @@ private fun fetchPhoneNumberNow(
     logPhoneFetch("Could not get country ISO from active SIM, using system default", level = "w")
     systemCountryISO
   }
-
+  // Use line1Number: primary method for Android <13, fallback for Android 13+
   val fallback = try {
     tmm.line1Number
   } catch (se: SecurityException) {
-    logPhoneFetch("⚠️ SecurityException reading line1Number: ${se.message}", level = "e")
+    logPhoneFetch("SecurityException reading line1Number: ${se.message}", level = "e")
     null
   }
 
   if (!fallback.isNullOrBlank()) {
-    logPhoneFetch("✅ Got phone number from TelephonyManager: $fallback, countryISO=$fallbackCountryISO", level = "i")
+    logPhoneFetch("Got phone number from TelephonyManager: $fallback, countryISO=$fallbackCountryISO", level = "i")
     onNumber(fallback, fallbackCountryISO)
     return
   } else {
-    logPhoneFetch("❌ TelephonyManager.line1Number returned null/blank", level = "w")
+    logPhoneFetch("TelephonyManager.line1Number returned null/blank", level = "e")
   }
 
   onNumber(fallback, fallbackCountryISO)
@@ -300,22 +305,14 @@ private fun fetchPhoneNumberNow(
 
 ### ✅ Advantages
 
-- Works on any Android version  
+- Works on most of Android versions 
 - Provides direct access to carrier/MSISDN info  
 - Can enumerate multiple SIMs  
-
 ---
 
 ### ⚠️ Limitations
 
 - Needs explicit permissions  
 - May return `null` depending on carrier  
-- Should be used **only as fallback**
-
 ---
 
-
-## ✅ Conclusion
-
-- Use the **Hint API** first for the best UX and privacy.  
-- Fallback to the **permission-based fetch** only when needed.  
