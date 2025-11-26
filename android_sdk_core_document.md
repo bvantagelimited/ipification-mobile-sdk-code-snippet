@@ -38,7 +38,7 @@ Use Android’s `Phone Number Hint` API as shown in our snippet:
 2. Start Authentication 
 *   Prepare the `authorization request` with required parameters
 *   Call Authorization API with `authorization request` ( GET ) through `Cellular Network`.
-*   Receive a response with: 
+*   Receive a `code` response with: 
     *   result directly via `redirect_uri` (1) or 
     *   redirection url (`301` or `302`) (2)
 *   (1) -> Parser the response then return the result to client
@@ -46,6 +46,7 @@ Use Android’s `Phone Number Hint` API as shown in our snippet:
 
 **Note:** All requests must be performed via the `cellular-network` interface.
 
+3. Call your backend API (S2S) with `code` to handle the token exchange.
 
 ### Authorization Request (HTTP)
 
