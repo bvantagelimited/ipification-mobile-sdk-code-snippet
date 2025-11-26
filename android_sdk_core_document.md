@@ -183,12 +183,9 @@ class CellularConnection {
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
             // enable DNS resolver with cellularnetwork
-            if (!isIPEndpoints(authRequest.getUrl())) {
-                // enable dns based on cellular network
-                val dns = NetworkDns.instance
-                dns.setNetwork(network)
-                httpBuilder.dns(dns)
-            }
+            val dns = NetworkDns.instance
+            dns.setNetwork(network)
+            httpBuilder.dns(dns)
          }
          
          //check and handle the response with redirect_uri
@@ -200,11 +197,6 @@ class CellularConnection {
             )
          )
          
-         // disable retry connection
-         httpBuilder.retryOnConnectionFailure(false)
-         
-         // handle cookie (optional)
-         httpBuilder.cookieJar(cookieJar)
          
          val httpClient = httpBuilder.build()
 
@@ -225,15 +217,6 @@ class CellularConnection {
             }
          })
         
-    }
-
-    // minor functions
-    private fun isIPEndpoints(requestUri: String): Boolean {
-        if (requestUri.startsWith("https://stage.ipification.com"))
-            return true
-        if (requestUri.startsWith("https://api.ipification.com"))
-            return true
-        return false
     }
 }
  ```
@@ -345,60 +328,6 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 
 ```
 
-```
---------------------------
-CookieJar (need to implement in case handling redirect urls)
-* For UK, RU market only
-Some special telcos (UK, RU) validate request cookies in their redirection flow. So we need to implement cookie manager to handle it
---------------------------
-private val cookieJar: CookieJar = object : CookieJar {
-    private val cookieStore: HashMap<String, ArrayList<Cookie>> = HashMap()
-    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        val sameDomainCookies = cookieStore[url.host] ?: ArrayList()
-        for(cookie in cookies){
-            if(cookie.domain == url.host){ // same cookie domain
-                val pos = sameDomainCookies.indexOfFirst{
-                    it.name == cookie.name
-                }
-                if(pos >= 0) {
-                    sameDomainCookies[pos] = cookie
-                } else {
-                    sameDomainCookies.add(cookie)
-                }
-            } else { // save then check root domain
-                val dmCookies = cookieStore[cookie.domain] ?: ArrayList()
-                val pos = dmCookies.indexOfFirst{
-                    it.name == cookie.name && it.domain == cookie.domain
-                }
-                if(pos >= 0) {
-                    dmCookies[pos] = cookie
-                } else {
-                    dmCookies.add(cookie)
-                }
-                cookieStore[cookie.domain] = dmCookies
-            }
-        }
-        cookieStore[url.host] = sameDomainCookies
-    }
-
-    override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        val cookies = cookieStore[url.topPrivateDomain()]  ?: ArrayList()
-        if(cookieStore[url.topPrivateDomain()] != null){
-            val dmCookies = cookieStore[url.topPrivateDomain()]!!
-            val validPathCookies = ArrayList<Cookie>()
-            for(ck in dmCookies){
-                if(url.toString().contains(ck.path)){
-                    validPathCookies.add(ck)
-                }
-            }
-            cookies.addAll(validPathCookies)
-        }
-        return cookies
-    }
-}
-
-
-```
 More Detail Implementation: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_IPificationService.kt
 ```
 ```
