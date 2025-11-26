@@ -22,7 +22,8 @@ Main Flow of iOS SDK :
 
 **Note:** All requests need to be performed via `cellular network` interface.
 
-
+3. Call your backend API (S2S) with `code` from the response to handle the token exchange.
+   
 ## Authorization Request (HTTP)
 
 ```
