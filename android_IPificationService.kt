@@ -445,9 +445,6 @@ class IPificationCoreService(redirectUri: String?) {
             httpBuilder.dns(dns)
         }
         
-        // handle cookie (for special market telcos: RU,UK)
-        httpBuilder.cookieJar(cookieJar)
-
         //check and handle the response with redirect_uri
         if(mApiType == APIType.AUTH){
             httpBuilder.addNetworkInterceptor(
@@ -466,10 +463,6 @@ class IPificationCoreService(redirectUri: String?) {
             10000,
             TimeUnit.MILLISECONDS
         )    // read timeout
-        // disable retry connection
-        httpBuilder.retryOnConnectionFailure(false)
-
-
 
         val httpClient = httpBuilder.build()
 
@@ -626,16 +619,7 @@ class IPificationCoreService(redirectUri: String?) {
         return Patterns.WEB_URL.matcher(urlString).matches()
     }
 
-    /**
-     * Checks if the provided request URI is one of the specified IP endpoints.
-     *
-     * @param requestUri The request URI to check.
-     * @return True if the URI is a known IP endpoint, false otherwise.
-     */
-    private fun isIPEndpoints(requestUri: String): Boolean {
-        return requestUri.startsWith("https://api.stage.ipification.com") ||
-                requestUri.startsWith("https://api.ipification.com")
-    }
+
 
     internal fun isMobileDataEnabled(context: Context): Boolean {
         val cm =
@@ -761,48 +745,4 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
     }
 }
 
-private val cookieJar: CookieJar = object : CookieJar {
-    private val cookieStore: MutableMap<String, MutableList<Cookie>> = mutableMapOf()
 
-    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        val domain = url.host
-        val sameDomainCookies = cookieStore.getOrPut(domain) { mutableListOf() }
-
-        cookies.forEach { cookie ->
-            val domainCookies = cookieStore.getOrPut(cookie.domain) { mutableListOf() }
-
-            if (cookie.domain == domain) {  // same cookie domain
-                val pos = sameDomainCookies.indexOfFirst { it.name == cookie.name }
-                if (pos >= 0) {
-                    sameDomainCookies[pos] = cookie
-                } else {
-                    sameDomainCookies.add(cookie)
-                }
-            } else { // save then check root domain
-                val pos = domainCookies.indexOfFirst { it.name == cookie.name && it.domain == cookie.domain }
-                if (pos >= 0) {
-                    domainCookies[pos] = cookie
-                } else {
-                    domainCookies.add(cookie)
-                }
-            }
-            cookieStore[cookie.domain] = domainCookies
-        }
-        cookieStore[domain] = sameDomainCookies
-    }
-
-    override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        val cookies = mutableListOf<Cookie>()
-        val domain = url.topPrivateDomain() ?: url.host
-
-        cookieStore[domain]?.let { domainCookies ->
-            domainCookies.forEach { cookie ->
-                if (url.encodedPath.startsWith(cookie.path)) {
-                    cookies.add(cookie)
-                }
-            }
-        }
-
-        return cookies
-    }
-}
