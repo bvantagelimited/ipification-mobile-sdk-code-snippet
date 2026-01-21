@@ -262,10 +262,13 @@ class IPificationCoreService {
         print( "host" , url.host!)
         
         let host = url.host!
-        let path = url.path != "" ? url.path : "/"
-        print( "path" , path)
-        let query = url.query != nil ? "?" + url.query! : ""
-        print( "query" , query)
+        var path = url.percentEncodedPath
+        if(path == "") {
+            path = "/"
+        }
+        print("Initial path: \(path)")
+        var query = url.percentEncodedQuery != nil ? "?" + url.percentEncodedQuery! : ""
+        print("Initial query: \(query)")
         
         let cookies = loadCookies(host: url.host!, path: path)
 
