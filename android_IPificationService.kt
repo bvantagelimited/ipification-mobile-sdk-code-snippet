@@ -727,6 +727,7 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
 
         val request: Request = chain.request()
+        
         Log.d(TAG, "url: ${request.url}" )
         val t1 = System.nanoTime()
         Log.d(TAG,
@@ -737,7 +738,13 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
                 request.headers
             )
         )
-        val response = chain.proceed(request)
+        //singtel
+        val requestNoUA = request.newBuilder()
+        .removeHeader("User-Agent")
+        .build()
+
+        Log.d(TAG, "url: ${requestNoUA.url}")
+        val response = chain.proceed(requestNoUA)
         // Check if the response is a redirect (HTTP 3xx status code)
         if (response.code in 300.. 399){
             val locationHeader = response.header("location") ?: response.header("Location")
@@ -745,7 +752,7 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
             // Check if the location header starts with the defined redirectUri
             if (locationHeader != null && locationHeader.startsWith(mRedirectUri)) {
                 // Build a new successful response with HTTP 200 status code
-                val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+                val builder: Response.Builder = Response.Builder().request(requestNoUA).protocol(Protocol.HTTP_1_1)
 
                 val contentType: MediaType? = response.body?.contentType()
                 val body = locationHeader.toResponseBody(contentType)
