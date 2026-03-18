@@ -192,16 +192,21 @@ class IPificationService {
         // - redirectUri: The URI to redirect to after authentication
         // - phoneNumber: A hint for the login process, typically the user's phone number
         // - response_type=code: Indicates that the response will include an authorization code
-        // - scope=openid%20ip:phone_verify: Specifies the scopes of the request, including OpenID and phone verification
+        // - scope=openid ip:phone_verify: Specifies the scopes of the request, including OpenID and phone verification
         // - randomState: A randomly generated string to maintain state between the request and callback
         // These parameters are appended to the base URL using a StringBuilder to form the final authentication URL
+        fun encode(value: String) = URLEncoder.encode(value, "UTF-8")
+        val consentId = "" // consent_id and consent_timestamp are for XL only. default is ipconsent001eng
+        val unixTime = System.currentTimeMillis() / 1000L
         val authUrlWithParams = StringBuilder(authURLString).apply {
-            append("?client_id=").append(clientID)
-            append("&redirect_uri=").append(redirectUri)
-            append("&login_hint=").append(phoneNumber)
+            append("?client_id=").append(encode(clientID))
+            append("&redirect_uri=").append(encode(redirectUri))
+            append("&login_hint=").append(encode(phoneNumber))
             append("&response_type=code")
-            append("&scope=openid%20ip:phone_verify")
-            append("&state=").append(randomState)
+            append("&scope=").append(encode("openid ip:phone_verify"))
+            append("&state=").append(encode(randomState))
+            append("&consent_id=").append(encode(consentId))
+            append("&consent_timestamp=").append(unixTime)
         }.toString()
 
         ipService.connectTo(context, authUrlWithParams, APIType.AUTH, object : IPCallback {
