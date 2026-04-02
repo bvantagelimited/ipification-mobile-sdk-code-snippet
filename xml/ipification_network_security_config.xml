@@ -7,8 +7,11 @@
         <!-- XL (Indonesia) -->
         <domain includeSubdomains="true">xl.co.id</domain>
 
+        <!-- SmartFren (Indonesia) -->
+        <domain includeSubdomains="true">smartfren.com</domain>
+        
         <!-- ADL Digital Services (Thailand) (changed to https) -->
-<!--         <domain includeSubdomains="true">adldigitalservice.com</domain> -->
+        <!-- <domain includeSubdomains="true">adldigitalservice.com</domain> -->
 
         <!-- EnStream (Canadian mobile identity provider) -->
         <domain includeSubdomains="true">enstreamidentity.com</domain>
@@ -19,8 +22,6 @@
         <!-- Vodafone, O2 (UK) -->
         <domain includeSubdomains="true">vodafone.com</domain>
 
-        <!-- SmartFren (ID) -->
-        <domain includeSubdomains="true">smartfren.com</domain>
         
         <!-- Argentina -->
         <domain includeSubdomains="true">openxpand.com</domain>
