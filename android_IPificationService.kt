@@ -72,7 +72,7 @@ import java.net.Inet6Address
  * - android.permission.ACCESS_WIFI_STATE
  * 
  * 📚 Dependencies:
- * - OkHttp (com.squareup.okhttp3:okhttp) for network requests
+ * - OkHttp (com.squareup.okhttp3:okhttp:5.3.2) for network requests
 
  * ⚠️ Cleartext HTTP Support:
  * https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_sdk_core_document.md#cleartext-http-supports
