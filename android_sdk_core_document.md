@@ -8,7 +8,7 @@ This document describes the IPification Android SDK and its usage. The main purp
 | **Minimum OS**            | Android 5.0 (API 21) or higher                                                                                            |
 | **Device prerequisite**    | **Mobile / cellular data must be enabled.**<br/>All IPification requests (and redirects) are forced over the cellular interface. |
 | **Required manifest permissions** | `INTERNET`, `ACCESS_NETWORK_STATE`, `CHANGE_NETWORK_STATE`, `ACCESS_WIFI_STATE` |
-| **Networking library**     | IPification ships with **OkHttp 3 / 4** (socket binding + custom DNS).
+| **Networking library**     | IPification ships with **OkHttp 5.3.2 ** (socket binding + custom DNS).
 
 ### 2. ClearText HTTP supports
 
