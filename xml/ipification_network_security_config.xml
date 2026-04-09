@@ -33,5 +33,7 @@
         <domain includeSubdomains="true">jio.com</domain>
         <domain includeSubdomains="true">jiolabs.com</domain>
         
+        <!-- CelcomDigi (Malaysia) -->
+        <domain includeSubdomains="true">celcomdigi.com</domain>
     </domain-config>
 </network-security-config>
