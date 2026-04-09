@@ -16,10 +16,10 @@
         <!-- EnStream (Canadian mobile identity provider) -->
         <domain includeSubdomains="true">enstreamidentity.com</domain>
 
-        <!-- SmartDigits (TRUID) -->
+        <!-- SmartDigits (TRUID): O2 (UK)-->
         <domain includeSubdomains="true">smartdigits.io</domain>
 
-        <!-- Vodafone, O2 (UK) -->
+        <!-- Vodafone (UK) -->
         <domain includeSubdomains="true">vodafone.com</domain>
 
         
