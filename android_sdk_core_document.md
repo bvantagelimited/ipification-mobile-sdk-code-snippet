@@ -107,7 +107,7 @@ import okhttp3.Response
 import java.util.*
 
 // Manifest.xml: required permission:  INTERNET, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_NETWORK_STATE, android:usesCleartextTraffic="true"
-// external library: OkHttp : com.squareup.okhttp3:okhttp 3.x or 4.x
+// external library: OkHttp : com.squareup.okhttp3:okhttp 5.x
 
 class CellularConnection {
 
