@@ -317,6 +317,7 @@ class IPificationCoreService(redirectUri: String?) {
     private val CONNECT_NETWORK_TIMEOUT : Long = 5000L
     private val TAG: String = "IPificationCoreService"
     private var mRedirectUri: String? = redirectUri
+    private val cookieJar: CookieJar = InMemoryCookieJar()
 
     private lateinit var mRequestUrl : String
     private var mCallback : IPCallback? = null
@@ -450,6 +451,9 @@ class IPificationCoreService(redirectUri: String?) {
             httpBuilder.dns(dns)
         }
         
+        // handle cookie (for special market telcos: RU,UK)
+        httpBuilder.cookieJar(cookieJar)
+
         //check and handle the response with redirect_uri
         if(mApiType == APIType.AUTH){
             httpBuilder.addNetworkInterceptor(
@@ -750,4 +754,41 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
     }
 }
 
+/**
+ * Stores cookies in memory for a single SDK flow. Matching is delegated to
+ * OkHttp's cookie rules so host-only, parent-domain, and path-restricted
+ * cookies behave consistently across follow-up requests.
+ */
+private class InMemoryCookieJar : CookieJar {
+    private val lock = Any()
+    private val cookies = mutableListOf<Cookie>()
 
+    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        val now = System.currentTimeMillis()
+
+        synchronized(lock) {
+            this.cookies.removeAll { it.expiresAt <= now }
+
+            cookies.forEach { cookie ->
+                this.cookies.removeAll { storedCookie ->
+                    storedCookie.name == cookie.name &&
+                        storedCookie.domain == cookie.domain &&
+                        storedCookie.path == cookie.path
+                }
+
+                if (cookie.expiresAt > now) {
+                    this.cookies.add(cookie)
+                }
+            }
+        }
+    }
+
+    override fun loadForRequest(url: HttpUrl): List<Cookie> {
+        val now = System.currentTimeMillis()
+
+        synchronized(lock) {
+            cookies.removeAll { it.expiresAt <= now }
+            return cookies.filter { it.matches(url) }
+        }
+    }
+}
