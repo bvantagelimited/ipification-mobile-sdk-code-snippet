@@ -47,6 +47,7 @@ import java.util.TimerTask
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HttpsURLConnection
 import java.net.Inet6Address
+import java.net.URLEncoder
 
 
 /**
