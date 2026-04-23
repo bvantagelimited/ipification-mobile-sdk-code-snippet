@@ -22,11 +22,12 @@ User’s device has the mobile network enabled.
 <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 ```
 ### Network 3rd Library
-OKHttp3 version 3 / 4. <br/>
+OKHttp3 version 5 (supports IPv6/v4). <br/>
 > We use OKHttp3 because it supports binding to the cellular network via socket and targeting DNS.
 
 ```groovy
-implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+
 ```
 
 
