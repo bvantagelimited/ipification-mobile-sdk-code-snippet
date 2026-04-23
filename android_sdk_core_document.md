@@ -15,10 +15,16 @@ This document describes the IPification Android SDK and its usage. The main purp
 This configuration is only required for specific countries and telcos:
 
 - Indonesia: XL, Tri, Smartfren
+
 - Canada: TELUS
-- Thailand: AIS TH
+
 - Mexico: Telcel
+
 - UK: 02
+
+- Sri lanka: Dialog
+
+- India: Jio
   
 To support authentication with these telcos, which require cleartext network traffic, we need to enable cleartext traffic for their domains.
 https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/xml/ipification_network_security_config.xml
