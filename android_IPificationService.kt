@@ -74,6 +74,7 @@ import java.net.URLEncoder
  * 
  * 📚 Dependencies:
  * - OkHttp (com.squareup.okhttp3:okhttp) for network requests
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
 
  * ⚠️ Cleartext HTTP Support:
  * https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_sdk_core_document.md#cleartext-http-supports
