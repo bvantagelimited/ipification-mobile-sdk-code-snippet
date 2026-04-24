@@ -445,7 +445,7 @@ class IPificationCoreService(redirectUri: String?) {
         httpBuilder.socketFactory(network.socketFactory)
 
         // add dns
-        if (network != null) {
+        if (network != null && !isIPEndpoints(mRequestUrl)) {
             // enable DNS resolver with cellular network
             // enable dns based on cellular network
             val dns = NetworkDns.instance
@@ -663,6 +663,18 @@ class IPificationCoreService(redirectUri: String?) {
             @Suppress("DEPRECATION")
             networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
         }
+    }
+    
+    // functions to check if endpoint is IPification's server or not
+    private fun isIPEndpoint(requestUri: String): Boolean {
+        val host = try {
+            URI(requestUri).host?.lowercase()
+        } catch (e: Exception) {
+            null
+        } ?: return false
+
+        val result = host == "ipification.com" || host.endsWith(".ipification.com")
+        return result
     }
 }
 
