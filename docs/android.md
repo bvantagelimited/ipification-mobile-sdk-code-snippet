@@ -296,6 +296,19 @@ class CellularConnection {
             HandleRedirectInterceptor(authRequest.mRedirectUri.toString())
          )
 
+         // Optional Singtel compatibility: Singtel may inspect or reject requests containing a
+         // User-Agent header. Enable this only when required for the Singtel integration.
+         // A network interceptor is required because OkHttp may add its default User-Agent
+         // after application interceptors have already run.
+         //
+         // httpBuilder.addNetworkInterceptor { chain ->
+         //     val requestWithoutUserAgent = chain.request()
+         //         .newBuilder()
+         //         .removeHeader("User-Agent")
+         //         .build()
+         //     chain.proceed(requestWithoutUserAgent)
+         // }
+
 
          val httpClient = httpBuilder.build()
 
@@ -468,6 +481,13 @@ parse its query parameters and verify that `state` matches the value generated a
 the flow before accepting the authorization `code`. If onboarding permits wildcard redirect
 URIs, replace `isTerminalRedirect()` with an explicit matcher for the approved wildcard pattern;
 do not fall back to unrestricted string-prefix matching.
+
+> **Singtel compatibility — optional `User-Agent` removal:** Singtel may inspect the
+> `User-Agent` header and block requests that include it. If IPification confirms this behavior
+> for the Singtel integration, use the
+> network-interceptor example above to remove the header from every request and redirect in the
+> cellular flow. Do not remove it globally or by default, because unrelated endpoints and SDKs
+> may rely on normal HTTP headers. Test this behavior on the Singtel network before release.
 
 More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPificationService.kt)
 
