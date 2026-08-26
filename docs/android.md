@@ -507,6 +507,21 @@ Use this option only when every new network connection created by the applicatio
 must use cellular. Call `bind()` once before starting the batch. Create new HTTP clients and
 connections only after `onBound` is called.
 
+For a login flow that uses cellular temporarily and then returns to Wi-Fi or Android's normal
+default network:
+
+1. Pause unrelated API calls, background synchronization, analytics, and downloads.
+2. Call `bind()` and wait for `onBound` before creating the login HTTP client.
+3. Perform every required login request and redirect with that new client.
+4. Wait until the final login success, failure, or cancellation callback.
+5. Stop using the login client and call `unbind()`. This calls
+   `bindProcessToNetwork(null)` and unregisters the cellular `NetworkCallback`.
+6. Create or resume normal API clients after unbinding. Their new sockets will use Android's
+   restored default network, which is normally Wi-Fi when Wi-Fi is connected.
+
+For this temporary-login scenario, Option 5.1 is usually safer because unrelated app traffic
+never leaves the default network.
+
 ```kotlin
 private val cellularBinding by lazy {
     ProcessCellularBinding(applicationContext)
@@ -525,13 +540,13 @@ fun performAllRequestsOnCellular() {
 
             performCoverageRequest(httpClient) { coverageResult ->
                 if (coverageResult.isFailure) {
-                    finishCellularWork(httpClient)
+                    finishCellularWork()
                     return@performCoverageRequest
                 }
 
                 performAuthenticationRequest(httpClient) {
                     // All requests in this cellular-only batch are now complete.
-                    finishCellularWork(httpClient)
+                    finishCellularWork()
                 }
             }
         },
@@ -546,10 +561,7 @@ fun performAllRequestsOnCellular() {
     )
 }
 
-private fun finishCellularWork(httpClient: OkHttpClient) {
-    // Do not reuse cellular sockets after restoring Android's default network.
-    httpClient.connectionPool.evictAll()
-
+private fun finishCellularWork() {
     // Restores normal routing with bindProcessToNetwork(null), then calls
     // unregisterNetworkCallback() for the shared cellular network request.
     cellularBinding.unbind()
@@ -562,11 +574,22 @@ The complete lifecycle-safe helper is available in
 It prevents duplicate binding, handles timeout and network loss, and makes `close()` an alias
 for `unbind()`.
 
+The example creates a dedicated `OkHttpClient` for the cellular batch and does not reuse it, so
+`connectionPool.evictAll()` is not required. If a shared client will be reused after `unbind()`,
+either recreate that client or call `client.connectionPool.evictAll()` after all active calls
+finish. Otherwise, a pooled socket created while the process was bound may continue using its
+existing cellular connection even though new sockets use Android's restored default network.
+
 Important limitations:
 
 - Process binding affects unrelated SDKs, analytics, downloads, and API clients in the same
   process.
-- Existing sockets and pooled connections are not migrated to cellular.
+- Existing sockets and pooled connections are not migrated when binding or unbinding. A client
+  created before `bind()` may keep using a Wi-Fi socket during login, while a client reused after
+  `unbind()` may keep using its cellular socket.
+- To guarantee whole-process cellular behavior during login, pause other traffic and recreate or
+  evict relevant shared-client connection pools after binding. Recreate or evict them again after
+  unbinding before resuming normal traffic.
 - Always call `unbind()` in every terminal completion, cancellation, and error path.
 - Do not let multiple components independently call `bindProcessToNetwork()`.
 
