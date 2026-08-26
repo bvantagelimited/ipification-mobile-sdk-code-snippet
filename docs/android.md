@@ -10,24 +10,25 @@ This document describes the IPification Android SDK and its usage. The main purp
 | **Required manifest permissions** | `INTERNET`, `ACCESS_NETWORK_STATE`, `CHANGE_NETWORK_STATE`, `ACCESS_WIFI_STATE` |
 | **Networking library**     | IPification ships with **OkHttp 5** (socket binding + custom DNS).
 
-### 2. ClearText HTTP supports
+### 2. Cleartext HTTP support
 
-This configuration is only required for specific countries and telcos:
+This configuration is required only for the following markets and providers:
 
-- Indonesia: XL, Tri, Smartfren
+| Market | Provider or platform | Cleartext-enabled domains |
+| --- | --- | --- |
+| Indonesia | Tri, XL, Smartfren | `ipification.com`, `xl.co.id`, `smartfren.com` |
+| Canada | EnStream | `enstreamidentity.com` |
+| Mexico | Telcel | `ipification.com` |
+| United Kingdom | O2 (SmartDigits/TRUID), Vodafone | `smartdigits.io`, `vodafone.com` |
+| Argentina | OpenXpand | `openxpand.com` |
+| Sri Lanka | Ideabiz | `ideabiz.lk` |
+| India | Vodafone Idea, Airtel, Jio | `ipification.com`, `airtel.in`, `jio.com`, `jiolabs.com` |
+| Malaysia | CelcomDigi | `celcomdigi.com` |
 
-- Canada: TELUS
-
-- Mexico: Telcel
-
-- UK: 02
-
-- Sri lanka: Dialog
-
-- India: Jio
-
-To support authentication with these telcos, which require cleartext network traffic, we need to enable cleartext traffic for their domains.
-https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/examples/android/request-scoped/resources/ipification_network_security_config.xml
+To authenticate with these providers, enable cleartext traffic only for the listed domains.
+Use the maintained
+[`ipification_network_security_config.xml`](../examples/android/request-scoped/resources/ipification_network_security_config.xml)
+as the source of truth.
 
 ## 3 . Retrieving the User’s Phone Number (Optional)
 
