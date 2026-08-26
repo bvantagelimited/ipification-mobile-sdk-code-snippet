@@ -85,9 +85,21 @@ Response:
 | consent_timestamp (optional) | The time stamp when consent was accepted by end user. Accepted format is UNIX time stamp in seconds. |
 
 
-## 5. Android Code Snippet
+## 5. Android code snippets
 
- ```
+Choose the routing scope that matches the integration:
+
+| Option | Routing scope | Cleanup |
+| --- | --- | --- |
+| **5.1 Force cellular for each request** | Only the IPification HTTP client/request uses cellular. Recommended. | Unregister the request's `NetworkCallback` when the request finishes. |
+| **5.2 Force cellular for the whole app process** | All future sockets and DNS lookups in the app process use cellular. Android API 23+. | After all requests finish, restore the default network and unregister the shared `NetworkCallback`. |
+
+### 5.1 Force cellular for each request
+
+Request a cellular `Network` and bind only the IPification OkHttp client to its socket factory
+and DNS resolver. Other application traffic continues using Android's default network.
+
+```kotlin
 
 import android.annotation.TargetApi
 
@@ -228,10 +240,10 @@ class CellularConnection {
 
     }
 }
- ```
+```
 
- ```
- --------------------------
+```kotlin
+--------------------------
 NetworkDns.kt
 Use this class to implement DNS. Should use the cellular network to resolve the IP of the hostname (in wifi case). Prior ipv4 over ipv6
 --------------------------
@@ -290,7 +302,7 @@ class NetworkDns private constructor() : Dns {
            }
    }
 }
- ```
+```
 
 ```
 --------------------------
@@ -338,8 +350,80 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 ```
 
 More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPificationService.kt)
+
+After the HTTP request reaches a terminal success or failure callback, call
+`ConnectivityManager.unregisterNetworkCallback()` with the same callback passed to
+`requestNetwork()`.
+
+### 5.2 Force cellular for the whole app, then unregister after all requests
+
+Use this option only when every new network connection created by the application process
+must use cellular. Call `bind()` once before starting the batch. Create new HTTP clients and
+connections only after `onBound` is called.
+
+```kotlin
+private val cellularBinding by lazy {
+    ProcessCellularBinding(applicationContext)
+}
+private val cellularBatchStarted = AtomicBoolean(false)
+
+fun performAllRequestsOnCellular() {
+    cellularBinding.bind(
+        timeoutMillis = 10_000,
+        onBound = {
+            // onBound may run again if Android replaces a lost cellular network.
+            if (!cellularBatchStarted.compareAndSet(false, true)) return@bind
+
+            // Create clients after the process is bound. Existing sockets do not move.
+            val httpClient = OkHttpClient.Builder().build()
+
+            performCoverageRequest(httpClient) { coverageResult ->
+                if (coverageResult.isFailure) {
+                    finishCellularWork(httpClient)
+                    return@performCoverageRequest
+                }
+
+                performAuthenticationRequest(httpClient) {
+                    // All requests in this cellular-only batch are now complete.
+                    finishCellularWork(httpClient)
+                }
+            }
+        },
+        onUnavailable = {
+            // The helper has already released its network request.
+            cellularBatchStarted.set(false)
+            handleCellularUnavailable()
+        },
+        onLost = {
+            // Pause or fail pending work while Android looks for a replacement network.
+        },
+    )
+}
+
+private fun finishCellularWork(httpClient: OkHttpClient) {
+    // Do not reuse cellular sockets after restoring Android's default network.
+    httpClient.connectionPool.evictAll()
+
+    // Restores normal routing with bindProcessToNetwork(null), then calls
+    // unregisterNetworkCallback() for the shared cellular network request.
+    cellularBinding.unbind()
+    cellularBatchStarted.set(false)
+}
 ```
-```
+
+The complete lifecycle-safe helper is available in
+[`ProcessCellularBinding.kt`](../examples/android/process-scoped/ProcessCellularBinding.kt).
+It prevents duplicate binding, handles timeout and network loss, and makes `close()` an alias
+for `unbind()`.
+
+Important limitations:
+
+- Process binding affects unrelated SDKs, analytics, downloads, and API clients in the same
+  process.
+- Existing sockets and pooled connections are not migrated to cellular.
+- Always call `unbind()` in every terminal completion, cancellation, and error path.
+- Do not let multiple components independently call `bindProcessToNetwork()`.
+
 ### License
 
 
