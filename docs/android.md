@@ -91,13 +91,15 @@ Choose the routing scope that matches the integration:
 
 | Option | Routing scope | Cleanup |
 | --- | --- | --- |
-| **5.1 Force cellular for each request** | Only the IPification HTTP client/request uses cellular. Recommended. | Unregister the request's `NetworkCallback` when the request finishes. |
+| **5.1 Force cellular for each request** | Only the IPification HTTP client/request uses cellular. Recommended. | Keep the `NetworkCallback` registered for the complete cellular sequence, then unregister it after the final required cellular request finishes. |
 | **5.2 Force cellular for the whole app process** | All future sockets and DNS lookups in the app process use cellular. Android API 23+. | After all requests finish, restore the default network and unregister the shared `NetworkCallback`. |
 
 ### 5.1 Force cellular for each request
 
 Request a cellular `Network` and bind only the IPification OkHttp client to its socket factory
-and DNS resolver. Other application traffic continues using Android's default network.
+and DNS resolver. Other application traffic continues using Android's default network. Keep
+the same cellular network request active while required requests and redirects are still in
+progress.
 
 ```kotlin
 
@@ -351,9 +353,10 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 
 More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPificationService.kt)
 
-After the HTTP request reaches a terminal success or failure callback, call
-`ConnectivityManager.unregisterNetworkCallback()` with the same callback passed to
-`requestNetwork()`.
+After the **final required cellular request** reaches a terminal success or failure callback,
+call `ConnectivityManager.unregisterNetworkCallback()` with the same callback passed to
+`requestNetwork()`. Do not unregister between redirects or while another required cellular
+request still needs the selected network.
 
 ### 5.2 Force cellular for the whole app, then unregister after all requests
 
