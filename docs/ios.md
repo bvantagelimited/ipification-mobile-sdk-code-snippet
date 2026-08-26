@@ -13,20 +13,115 @@ authentication on iOS.
 
 ## 2. Cellular-routing scope
 
-Set the required interface type on each connection used by the IPification flow:
+### 2.1 Core cellular connection function
+
+The following function creates an HTTP or HTTPS connection that is allowed to use only the
+cellular interface:
 
 ```swift
-let parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
-parameters.requiredInterfaceType = .cellular
+import Foundation
+import Network
 
-let connection = NWConnection(
-    host: NWEndpoint.Host(host),
-    port: NWEndpoint.Port(rawValue: port)!,
-    using: parameters
-)
+enum CellularConnectionError: Error {
+    case invalidURL
+    case unsupportedScheme
+}
+
+@available(iOS 12.0, *)
+func createCellularConnection(to url: URL) throws -> NWConnection {
+    guard let hostName = url.host else {
+        throw CellularConnectionError.invalidURL
+    }
+
+    let scheme = url.scheme?.lowercased()
+    guard scheme == "http" || scheme == "https" else {
+        throw CellularConnectionError.unsupportedScheme
+    }
+
+    let portNumber = url.port ?? (scheme == "https" ? 443 : 80)
+    guard (1...65_535).contains(portNumber),
+          let port = NWEndpoint.Port(rawValue: UInt16(portNumber)) else {
+        throw CellularConnectionError.invalidURL
+    }
+
+    let tcpOptions = NWProtocolTCP.Options()
+    tcpOptions.connectionTimeout = 10
+    tcpOptions.noDelay = true
+
+    let tlsOptions: NWProtocolTLS.Options? =
+        scheme == "https" ? NWProtocolTLS.Options() : nil
+    let parameters = NWParameters(tls: tlsOptions, tcp: tcpOptions)
+
+    // Core forcing rule: this connection must use cellular and cannot fall back to Wi-Fi.
+    parameters.requiredInterfaceType = .cellular
+
+    return NWConnection(
+        host: NWEndpoint.Host(hostName),
+        port: port,
+        using: parameters
+    )
+}
 ```
 
-This setting applies only to the `NWConnection` created with those parameters. iOS does not
+`requiredInterfaceType = .cellular` is the forcing instruction. When Wi-Fi is connected, this
+`NWConnection` still uses cellular. When cellular is unavailable, the connection waits or fails;
+it does not silently fall back to Wi-Fi.
+
+### 2.2 Start and observe the connection
+
+Register the state handler before calling `start(queue:)`:
+
+```swift
+let networkQueue = DispatchQueue(label: "com.example.ipification.cellular")
+var activeCellularConnection: NWConnection?
+
+do {
+    let connection = try createCellularConnection(to: requestURL)
+    activeCellularConnection = connection
+
+    connection.stateUpdateHandler = { [weak connection] state in
+        switch state {
+        case .ready:
+            guard let connection else { return }
+            // The cellular TCP/TLS connection is ready. Serialize and send the HTTP request,
+            // then continue receiving data until the complete HTTP response is available.
+            sendHTTPRequest(over: connection)
+
+        case .waiting(let error):
+            // The required cellular path is temporarily unavailable. The connection may recover;
+            // apply the integration timeout instead of falling back to Wi-Fi.
+            print("Waiting for cellular network: \(error)")
+
+        case .failed(let error):
+            // Terminal connection failure. Notify the caller and release the connection.
+            handleCellularFailure(error)
+            connection?.cancel()
+            activeCellularConnection = nil
+
+        case .cancelled:
+            // No further callbacks or network activity are expected.
+            break
+
+        default:
+            break
+        }
+    }
+
+    connection.start(queue: networkQueue)
+} catch {
+    handleCellularFailure(error)
+}
+```
+
+`sendHTTPRequest(over:)` represents the HTTP serialization and receive loop implemented by the
+maintained sample. Store the returned connection in a property such as
+`activeCellularConnection`; a local variable alone may be released before the asynchronous work
+finishes. After the final response, failure, timeout, or user cancellation, call `cancel()` and
+clear the property so the connection and its resources are released.
+
+### 2.3 Scope limitation
+
+The cellular requirement applies only to the `NWConnection` created with these parameters. iOS does not
 provide a public equivalent to Android's `bindProcessToNetwork()` and cannot force every
 connection in the app process to use cellular.
 
