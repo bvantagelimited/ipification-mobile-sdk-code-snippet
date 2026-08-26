@@ -35,7 +35,7 @@ as the source of truth.
 Need the MSISDN for coverage checking?
 Use Android’s `Phone Number Hint` API as shown in our snippet:
 
-<https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/docs/android-phone-number-hint.md>
+[Android Phone Number Hint guide](android-phone-number-hint.md)
 
 ## 4. Main Flow of Mobile SDK :
 1. Check Coverage
@@ -336,7 +336,7 @@ class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: 
 
 ```
 
-More Detail Implementation: https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/examples/android/request-scoped/IPificationService.kt
+More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPificationService.kt)
 ```
 ```
 ### License
