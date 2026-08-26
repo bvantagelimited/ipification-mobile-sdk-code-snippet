@@ -249,19 +249,40 @@ class CellularConnection {
             .build()
          httpClient.newCall(okHttpRequest).enqueue(object : Callback {
             override fun onResponse(call: Call, response: Response) {
+                // Runs asynchronously on an OkHttp dispatcher thread, not the main thread.
+                // This callback is delivered after OkHttp follows intermediate redirects. If
+                // HandleRedirectInterceptor detects the registered redirect_uri, the response
+                // body contains that terminal callback URL for parsing `code` and `state`.
                 try {
-                    // Handle the final response after all required redirects.
-                    Log.i("CellularConnection", "RESULT:${response.body?.string()}")
+                    // body.string() consumes the response body and can be called only once.
+                    // Parse/store the value here, then post UI updates to the main thread.
+                    val responseBody = response.body?.string().orEmpty()
+
+                    // Check response.isSuccessful and validate `state` before accepting `code`.
+                    // Avoid logging the authorization response in production.
+                    Log.i("CellularConnection", "RESULT:$responseBody")
                 } finally {
+                    // Always close the response to release the socket back to OkHttp.
                     response.close()
+
+                    // This sample treats this call as the final required cellular request.
+                    // If another required request or retry follows, keep the NetworkCallback
+                    // registered and call onComplete() only from that final callback instead.
                     onComplete()
                 }
             }
 
             override fun onFailure(call: Call, e: IOException) {
+                // Called for transport failures, cancellation, DNS errors, or timeouts; HTTP
+                // error status codes are still delivered to onResponse(). This also runs on an
+                // OkHttp dispatcher thread, so post any UI work to the main thread.
                 try {
+                    // Decide whether to retry on the same cellular Network or fall back to
+                    // another authentication method. Do not expose raw exceptions to users.
                     Log.e("CellularConnection", "Request failed", e)
                 } finally {
+                    // For a retry, move this completion call to the retry's terminal callback.
+                    // Otherwise it unregisters the cellular NetworkCallback exactly once.
                     onComplete()
                 }
             }
