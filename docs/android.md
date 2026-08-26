@@ -100,10 +100,10 @@ Response:
 | redirect_uri |  is used when redirecting a user back to the client application. During the onboarding process, the client's `redirect_uri` will be provided, this value can represent wildcard uri and will be used to validate provided `redirect_uri` in the request. Redirect URI must be same accross all requestst in a flow. |
 | scope | use `openid ip:phone_verify` for phone number verifying  |
 | login_hint | end-user phone number (MSISDN).Phone number should be specified according to the E.164 number formatting (http://en.wikipedia.org/wiki/E.164) without leading + sign. |
-|mcc (optional) | Mobile Country Code |
-|mnc (optional) | Mobile Network Code |
 | consent_id (optional) | Unique ID for the consent that is traceable if consent audit is required. Value will be provided if needed in integration process. |
 | consent_timestamp (optional) | The time stamp when consent was accepted by end user. Accepted format is UNIX time stamp in seconds. |
+| mcc (optional) | Mobile Country Code |
+| mnc (optional) | Mobile Network Code |
 
 
 ## 5. Android code snippets
@@ -155,17 +155,33 @@ class CellularConnection {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    fun performRequest(context: Context, authRequest: AuthRequest) {
+    fun performRequest(
+        context: Context,
+        authRequest: AuthRequest,
+        onSuccess: (responseBody: String) -> Unit,
+        onFailure: (error: Throwable) -> Unit,
+    ) {
         // wifi is OFF, DATA is ON -> request with current network interface
         if (NetworkUtils.isMobileDataEnabled(context) && !NetworkUtils.isWifiEnabled(context)) {
-            processRequest(context, null, authRequest) { /* No requested network to release. */ }
+            processRequest(
+                context,
+                null,
+                authRequest,
+                onSuccess = onSuccess,
+                onFailure = { error -> onFailure(error) },
+            )
         } else {
-            requestCellularNetwork(context, authRequest)
+            requestCellularNetwork(context, authRequest, onSuccess, onFailure)
         }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun requestCellularNetwork(context: Context, authRequest: AuthRequest) {
+    private fun requestCellularNetwork(
+        context: Context,
+        authRequest: AuthRequest,
+        onSuccess: (responseBody: String) -> Unit,
+        onFailure: (error: Throwable) -> Unit,
+    ) {
         // 1. force network connection via cellular interface
         // If your app supports Android 21+, you need to implement handling timeout manually.
         // Android 21++ support requestNetwork (NetworkRequest request,
@@ -186,9 +202,9 @@ class CellularConnection {
         var timeoutTimer: Timer? = null
         lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
-        // Every terminal path calls this function. compareAndSet makes cleanup run once even
-        // if a timeout and an HTTP callback arrive at nearly the same time.
-        fun completeCellularSequence(errorMessage: String? = null) {
+        // Every terminal path supplies a Result here. compareAndSet ensures that cleanup and
+        // exactly one public callback run once, even if timeout and HTTP callbacks race.
+        fun completeCellularSequence(result: Result<String>) {
             if (!isCompleted.compareAndSet(false, true)) return
 
             timeoutTimer?.cancel()
@@ -198,7 +214,13 @@ class CellularConnection {
                 // Android may already have released a timed-out network request.
             }
 
-            errorMessage?.let { Log.e(TAG, it) }
+            result.exceptionOrNull()?.let { error ->
+                Log.e(TAG, "Cellular sequence failed", error)
+            }
+            result.fold(
+                onSuccess = onSuccess,
+                onFailure = onFailure,
+            )
         }
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -206,14 +228,25 @@ class CellularConnection {
                 // Ignore duplicate availability callbacks for this cellular sequence.
                 if (!requestStarted.compareAndSet(false, true)) return
 
-                processRequest(context, network, authRequest) {
-                    // OkHttp follows required redirects before delivering the final callback.
-                    completeCellularSequence()
-                }
+                processRequest(
+                    context,
+                    network,
+                    authRequest,
+                    onSuccess = { responseBody ->
+                        // OkHttp has followed all required redirects. Cleanup, then forward the
+                        // response so the caller can validate `state` and extract `code`.
+                        completeCellularSequence(Result.success(responseBody))
+                    },
+                    onFailure = { error ->
+                        completeCellularSequence(Result.failure(error))
+                    },
+                )
             }
 
             override fun onUnavailable() {
-                completeCellularSequence("Cellular network is unavailable")
+                completeCellularSequence(
+                    Result.failure(IOException("Cellular network is unavailable"))
+                )
             }
         }
 
@@ -223,7 +256,9 @@ class CellularConnection {
             timeoutTimer = Timer("cellular-network-timeout", true).apply {
                 schedule(object : TimerTask() {
                     override fun run() {
-                        completeCellularSequence("Timed out waiting for cellular network")
+                        completeCellularSequence(
+                            Result.failure(IOException("Timed out waiting for cellular network"))
+                        )
                     }
                 }, 5000)
             }
@@ -236,7 +271,8 @@ class CellularConnection {
         context: Context,
         network: Network?,
         authRequest: AuthRequest,
-        onComplete: () -> Unit,
+        onSuccess: (responseBody: String) -> Unit,
+        onFailure: (error: IOException) -> Unit,
     ) {
          // using OkHTTP library to make the connection
          val httpBuilder =OkHttpClient.Builder()
@@ -283,17 +319,18 @@ class CellularConnection {
                     // Parse/store the value here, then post UI updates to the main thread.
                     val responseBody = response.body?.string().orEmpty()
 
-                    // Check response.isSuccessful and validate `state` before accepting `code`.
-                    // Avoid logging the authorization response in production.
-                    Log.i(TAG, "RESULT:$responseBody")
+                    // OkHttp delivers HTTP error status codes here as well. Report only 2xx
+                    // responses as success; transport and HTTP failures share onFailure.
+                    if (response.isSuccessful) {
+                        // The caller handles parsing, state validation, and cellular cleanup.
+                        // Avoid logging the authorization response in production.
+                        onSuccess(responseBody)
+                    } else {
+                        onFailure(IOException("HTTP request failed with ${response.code}"))
+                    }
                 } finally {
                     // Always close the response to release the socket back to OkHttp.
                     response.close()
-
-                    // This sample treats this call as the final required cellular request.
-                    // If another required request or retry follows, keep the NetworkCallback
-                    // registered and call onComplete() only from that final callback instead.
-                    onComplete()
                 }
             }
 
@@ -301,15 +338,9 @@ class CellularConnection {
                 // Called for transport failures, cancellation, DNS errors, or timeouts; HTTP
                 // error status codes are still delivered to onResponse(). This also runs on an
                 // OkHttp dispatcher thread, so post any UI work to the main thread.
-                try {
-                    // Decide whether to retry on the same cellular Network or fall back to
-                    // another authentication method. Do not expose raw exceptions to users.
-                    Log.e(TAG, "Request failed", e)
-                } finally {
-                    // For a retry, move this completion call to the retry's terminal callback.
-                    // Otherwise it unregisters the cellular NetworkCallback exactly once.
-                    onComplete()
-                }
+                // The caller decides whether to retry on the same cellular Network, fall back,
+                // or complete the sequence. Do not expose the raw exception to users.
+                onFailure(e)
             }
          })
 
@@ -424,7 +455,8 @@ call `ConnectivityManager.unregisterNetworkCallback()` with the same callback pa
 request still needs the selected network. In the sample, `completeCellularSequence()` is the
 only terminal cleanup path. Its `AtomicBoolean.compareAndSet(false, true)` guard ensures that
 timeout, unavailability, success, and failure cannot complete or unregister the sequence more
-than once.
+than once. Cellular acquisition failures—including `onUnavailable()` and the manual timeout—
+are delivered through the same public `onFailure` callback as HTTP transport failures.
 
 ### 5.2 Force cellular for the whole app, then unregister after all requests
 
