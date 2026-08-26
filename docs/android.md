@@ -202,9 +202,10 @@ class CellularConnection {
         var timeoutTimer: Timer? = null
         lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
-        // Every terminal path supplies a Result here. compareAndSet ensures that cleanup and
-        // exactly one public callback run once, even if timeout and HTTP callbacks race.
-        fun completeCellularSequence(result: Result<String>) {
+        // Every terminal path supplies a Result here. This function cancels the timeout,
+        // unregisters the requested cellular Network, and delivers one public callback.
+        // compareAndSet prevents duplicate cleanup if timeout and HTTP callbacks race.
+        fun finishCellularRequest(result: Result<String>) {
             if (!isCompleted.compareAndSet(false, true)) return
 
             timeoutTimer?.cancel()
@@ -235,16 +236,16 @@ class CellularConnection {
                     onSuccess = { responseBody ->
                         // OkHttp has followed all required redirects. Cleanup, then forward the
                         // response so the caller can validate `state` and extract `code`.
-                        completeCellularSequence(Result.success(responseBody))
+                        finishCellularRequest(Result.success(responseBody))
                     },
                     onFailure = { error ->
-                        completeCellularSequence(Result.failure(error))
+                        finishCellularRequest(Result.failure(error))
                     },
                 )
             }
 
             override fun onUnavailable() {
-                completeCellularSequence(
+                finishCellularRequest(
                     Result.failure(IOException("Cellular network is unavailable"))
                 )
             }
@@ -256,7 +257,7 @@ class CellularConnection {
             timeoutTimer = Timer("cellular-network-timeout", true).apply {
                 schedule(object : TimerTask() {
                     override fun run() {
-                        completeCellularSequence(
+                        finishCellularRequest(
                             Result.failure(IOException("Timed out waiting for cellular network"))
                         )
                     }
@@ -452,11 +453,12 @@ More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPific
 After the **final required cellular request** reaches a terminal success or failure callback,
 call `ConnectivityManager.unregisterNetworkCallback()` with the same callback passed to
 `requestNetwork()`. Do not unregister between redirects or while another required cellular
-request still needs the selected network. In the sample, `completeCellularSequence()` is the
-only terminal cleanup path. Its `AtomicBoolean.compareAndSet(false, true)` guard ensures that
-timeout, unavailability, success, and failure cannot complete or unregister the sequence more
-than once. Cellular acquisition failures—including `onUnavailable()` and the manual timeout—
-are delivered through the same public `onFailure` callback as HTTP transport failures.
+request still needs the selected network. In the sample,
+`finishCellularRequest()` is the only terminal result and cleanup path. Its
+`AtomicBoolean.compareAndSet(false, true)` guard ensures that timeout, unavailability, success,
+and failure cannot publish a result or unregister the network more than once. Cellular
+acquisition failures—including `onUnavailable()` and the manual timeout—are delivered through
+the same public `onFailure` callback as HTTP transport failures.
 
 ### 5.2 Force cellular for the whole app, then unregister after all requests
 
