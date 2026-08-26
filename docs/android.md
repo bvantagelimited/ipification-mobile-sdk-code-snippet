@@ -215,11 +215,11 @@ class CellularConnection {
     ) {
          // using OkHTTP library to make the connection
          val httpBuilder =OkHttpClient.Builder()
-         // add dns if needed
          if (network != null) {
             // enable socket for network
             httpBuilder.socketFactory(network.socketFactory)
-            // enable DNS resolver with cellularnetwork
+
+            // Add network-specific DNS resolution when a cellular Network is selected.
             val dns = NetworkDns.instance
             dns.setNetwork(network)
             httpBuilder.dns(dns)
