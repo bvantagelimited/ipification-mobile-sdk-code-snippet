@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Compatibility copy. The maintained file is:
-    examples/android/request-scoped/resources/ipification_network_security_config_for_id.xml
--->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <!-- Tri (Indonesia) -->
@@ -13,5 +9,6 @@
 
         <!-- SmartFren (Indonesia) -->
         <domain includeSubdomains="true">smartfren.com</domain>
+
     </domain-config>
 </network-security-config>

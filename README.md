@@ -1,7 +1,24 @@
-# Using Cellular Network for Phone Number Verification even when Wifi is on
+# IPification mobile SDK code snippets
 
 Using WiFi is more complicated when trying to use IPification Authentication. By default, all operating systems favor WiFi over cellular connections for all traffic. However, for IPification, the API request must be made using the cellular connection. We realize that users are unlikely to turn off WiFi, so the following code is provided for both iOS and Android to include in your applications. This will allow a small payload to be delivered over the cellular interface, even when WiFi is connected. Telcos usually don’t charge (zero rate) our Authentication URLs, so end users won’t incur any cost.
 
+## Repository contents
+
+| Area | Description |
+| --- | --- |
+| [`examples/android/request-scoped`](examples/android/request-scoped/README.md) | Recommended Android cellular request example |
+| [`examples/android/process-scoped`](examples/android/process-scoped/README.md) | Advanced Android whole-process cellular binding |
+| [`examples/ios/request-scoped`](examples/ios/request-scoped/README.md) | iOS cellular `NWConnection` example |
+| [`docs`](docs) | Platform integration and configuration guides |
+| [`im-authentication/android`](im-authentication/android/README.md) | Android IM authentication example |
+| [`device-info`](device-info/README.md) | SIM and mobile-network device information snippets |
+| [`deprecated`](deprecated/README.md) | Historical examples retained for reference only |
+
+Request-scoped routing is recommended for IPification. Process-scoped routing affects every
+future network connection created in the Android application process.
+
+Files moved from the previous layout are listed in [`MOVED_FILES.md`](MOVED_FILES.md), along
+with their compatibility policy.
 
 
 ## Android
@@ -40,7 +57,8 @@ builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
 builder.addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
 ```
 
-After this you are able to get `onAvailable()` callback from system and later you set process default network as mobile data.
+After this you receive an `onAvailable()` callback and can route the required request through
+the returned `Network` instance.
 ```kotlin
 val mNetworkCallBack = object: ConnectivityManager.NetworkCallback() {
     override fun onAvailable(network: Network) {
@@ -61,12 +79,24 @@ manager.requestNetwork( builder.build(), mNetworkCallBack)
 ```
 
 More Detail here:
-[Android Document](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/android_sdk_core_document.md)
+[Android integration guide](docs/android.md)
+
+### Whole-app process binding (advanced)
+
+Android 6.0 (API 23) and newer can make cellular the default network for future sockets and
+DNS lookups in the current app process. This has broad side effects, so request-scoped routing
+remains the recommended approach for IPification.
+
+- [Process-scoped cellular example](examples/android/process-scoped/README.md)
+- [ProcessCellularBinding.kt](examples/android/process-scoped/ProcessCellularBinding.kt)
 
 ## iOS
 
 
 For iOS 12 and newer, we use `NetWork framework` to make network connection via cellular interface.
+
+iOS does not provide a public API that forces the entire app process onto cellular. Interface
+selection must be applied to connections controlled by the app.
 
 
 ### Core Function
@@ -106,6 +136,6 @@ connection.stateUpdateHandler = { (newState) in
 connection.start(queue: .main)
 ```
 
-More Detail here: [iOS Document](https://github.com/bvantagelimited/ipification-mobile-sdk-code-snippet/blob/main/ios_sdk_core_document.md)
+More detail: [iOS integration guide](docs/ios.md)
 
 ---
