@@ -114,13 +114,15 @@ import android.os.Build
 import android.util.Log
 import com.ipification.mobile.sdk.android.interceptor.HandleRedirectInterceptor
 import com.ipification.mobile.sdk.android.request.AuthRequest
-import com.ipification.mobile.sdk.android.utils.LogUtils
 import com.ipification.mobile.sdk.android.utils.NetworkUtils
-import com.ipification.mobile.sdk.android.utils.debug
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import java.io.IOException
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 // Manifest.xml: required permission:  INTERNET, ACCESS_WIFI_STATE, ACCESS_NETWORK_STATE, CHANGE_NETWORK_STATE, android:usesCleartextTraffic="true"
 // external library: OkHttp : com.squareup.okhttp3:okhttp 5.x
@@ -131,7 +133,7 @@ class CellularConnection {
     fun performRequest(context: Context, authRequest: AuthRequest) {
         // wifi is OFF, DATA is ON -> request with current network interface
         if (NetworkUtils.isMobileDataEnabled(context) && !NetworkUtils.isWifiEnabled(context)) {
-            processRequest(context, null, authRequest)
+            processRequest(context, null, authRequest) { /* No requested network to release. */ }
         } else {
             requestCellularNetwork(context, authRequest)
         }
@@ -154,51 +156,63 @@ class CellularConnection {
             .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
 
+        val requestStarted = AtomicBoolean(false)
+        val isCompleted = AtomicBoolean(false)
+        var timeoutTimer: Timer? = null
+        lateinit var networkCallback: ConnectivityManager.NetworkCallback
+
+        // Every terminal path calls this function. compareAndSet makes cleanup run once even
+        // if a timeout and an HTTP callback arrive at nearly the same time.
+        fun completeCellularSequence(errorMessage: String? = null) {
+            if (!isCompleted.compareAndSet(false, true)) return
+
+            timeoutTimer?.cancel()
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback)
+            } catch (_: IllegalArgumentException) {
+                // Android may already have released a timed-out network request.
+            }
+
+            errorMessage?.let { Log.e("CellularConnection", it) }
+        }
+
+        networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Ignore duplicate availability callbacks for this cellular sequence.
+                if (!requestStarted.compareAndSet(false, true)) return
+
+                processRequest(context, network, authRequest) {
+                    // OkHttp follows required redirects before delivering the final callback.
+                    completeCellularSequence()
+                }
+            }
+
+            override fun onUnavailable() {
+                completeCellularSequence("Cellular network is unavailable")
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            connectivityManager.requestNetwork(
-                request,
-                object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        processRequest(context, network, authRequest)
-                    }
-
-                    override fun onUnavailable() {
-                        // cellular network is not available, call the callback error
-                        Log.e("TestAPI", "cellular network is not available")
-                    }
-                },
-                5000 // CONNECT_NETWORK_TIMEOUT
-            )
+            connectivityManager.requestNetwork(request, networkCallback, 5000)
         } else {
-            // manual adding timeout
-            connectivityManager.requestNetwork(
-                request,
-                object : ConnectivityManager.NetworkCallback() {
-                    override fun onAvailable(network: Network) {
-                        isReceiveResponse = true
-                        processRequest(context, network, authRequest)
+            timeoutTimer = Timer("cellular-network-timeout", true).apply {
+                schedule(object : TimerTask() {
+                    override fun run() {
+                        completeCellularSequence("Timed out waiting for cellular network")
                     }
-
-                    override fun onUnavailable() {
-                        isReceiveResponse = true
-                        // cellular network is not available, callback
-                        Log.e("CellularConnection", "cellular network is not available")
-                    }
-                }
-            )
-            Timer().schedule(object : TimerTask() {
-                override fun run() {
-                    LogUtils.debug("timeout isReceiveResponse=${isReceiveResponse} ")
-                    if (!isReceiveResponse) {
-                        handleUnAvailableCase(cellularCallback)
-                    }
-                }
-            }, 5000)
+                }, 5000)
+            }
+            connectivityManager.requestNetwork(request, networkCallback)
         }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private fun processRequest(context: Context, network: Network?, authRequest: AuthRequest) {
+    private fun processRequest(
+        context: Context,
+        network: Network?,
+        authRequest: AuthRequest,
+        onComplete: () -> Unit,
+    ) {
          // using OkHTTP library to make the connection
          val httpBuilder =OkHttpClient.Builder()
          // add dns if needed
@@ -231,12 +245,21 @@ class CellularConnection {
             .build()
          httpClient.newCall(okHttpRequest).enqueue(object : Callback {
             override fun onResponse(call: Call, response: Response) {
-                // handle the response
-               Log.i("CellularConnection", "callAPIonCellularNetwork RESULT:${response.body?.string()}")
+                try {
+                    // Handle the final response after all required redirects.
+                    Log.i("CellularConnection", "RESULT:${response.body?.string()}")
+                } finally {
+                    response.close()
+                    onComplete()
+                }
             }
 
             override fun onFailure(call: Call, e: IOException) {
-               e.printStackTrace()
+                try {
+                    Log.e("CellularConnection", "Request failed", e)
+                } finally {
+                    onComplete()
+                }
             }
          })
 
@@ -356,7 +379,10 @@ More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPific
 After the **final required cellular request** reaches a terminal success or failure callback,
 call `ConnectivityManager.unregisterNetworkCallback()` with the same callback passed to
 `requestNetwork()`. Do not unregister between redirects or while another required cellular
-request still needs the selected network.
+request still needs the selected network. In the sample, `completeCellularSequence()` is the
+only terminal cleanup path. Its `AtomicBoolean.compareAndSet(false, true)` guard ensures that
+timeout, unavailability, success, and failure cannot complete or unregister the sequence more
+than once.
 
 ### 5.2 Force cellular for the whole app, then unregister after all requests
 
