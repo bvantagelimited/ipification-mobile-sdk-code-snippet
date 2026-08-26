@@ -225,7 +225,11 @@ class CellularConnection {
             httpBuilder.dns(dns)
          }
 
-         //check and handle the response with redirect_uri
+         // Keep intermediate HTTP redirects on this cellular-bound OkHttp client.
+         // HandleRedirectInterceptor allows normal telco redirects to continue, but when a
+         // Location header starts with the registered redirect_uri, it treats that URL as the
+         // terminal callback and returns it in the response body. The caller can then parse
+         // the authorization code and state without opening the redirect URI in a browser.
          httpBuilder.addNetworkInterceptor(
             HandleRedirectInterceptor(
                 context,
