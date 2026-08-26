@@ -51,9 +51,30 @@ Use Android’s `Phone Number Hint` API as shown in our snippet:
 *   (1) -> Parser the response then return the result to client
 *   (2) -> Perform all url(s) redirection until receive the result with `redirect_uri` (through `Cellular Network`)
 
-**Note:** All requests must be performed via the `cellular-network` interface.
+**Note:** The mobile Coverage, Authorization, and required redirect requests must use the
+cellular interface. The server-to-server token exchange is performed by your backend and does
+not use the device's cellular connection.
 
-3. Call your backend API (S2S) with `code` to handle the token exchange.
+3. Complete verification through your backend (server to server)
+
+* The final `redirect_uri` contains an authorization `code` and the returned `state`.
+* Before accepting the result, verify that the returned `state` matches the value created when
+  the authentication flow started. Reject mismatched or missing state values.
+* Send the short-lived authorization `code` from the mobile app to **your own backend** over
+  HTTPS. Include the same `redirect_uri` and any internal transaction/session identifier your
+  backend needs to correlate the request.
+* Your backend sends the `code` to the configured IPification token endpoint using the
+  confidential client credentials supplied during onboarding and the same `redirect_uri` used
+  in the Authorization request.
+* Your backend validates the token response and verification result, then creates or updates
+  the application's authenticated session and returns only the required result to the app.
+
+Security requirements:
+
+- Never embed the client secret in the Android application or perform the confidential token
+  exchange directly from the device.
+- Treat the authorization code as single-use and short-lived. Do not log, cache, or persist it.
+- Do not log tokens or return confidential client credentials to the mobile app.
 
 ### Authorization Request (HTTP)
 
@@ -129,6 +150,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class CellularConnection {
 
+    companion object {
+        private const val TAG = "CellularConnection"
+    }
+
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     fun performRequest(context: Context, authRequest: AuthRequest) {
         // wifi is OFF, DATA is ON -> request with current network interface
@@ -173,7 +198,7 @@ class CellularConnection {
                 // Android may already have released a timed-out network request.
             }
 
-            errorMessage?.let { Log.e("CellularConnection", it) }
+            errorMessage?.let { Log.e(TAG, it) }
         }
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -260,7 +285,7 @@ class CellularConnection {
 
                     // Check response.isSuccessful and validate `state` before accepting `code`.
                     // Avoid logging the authorization response in production.
-                    Log.i("CellularConnection", "RESULT:$responseBody")
+                    Log.i(TAG, "RESULT:$responseBody")
                 } finally {
                     // Always close the response to release the socket back to OkHttp.
                     response.close()
@@ -279,7 +304,7 @@ class CellularConnection {
                 try {
                     // Decide whether to retry on the same cellular Network or fall back to
                     // another authentication method. Do not expose raw exceptions to users.
-                    Log.e("CellularConnection", "Request failed", e)
+                    Log.e(TAG, "Request failed", e)
                 } finally {
                     // For a retry, move this completion call to the retry's terminal callback.
                     // Otherwise it unregisters the cellular NetworkCallback exactly once.
@@ -295,7 +320,7 @@ class CellularConnection {
 ```kotlin
 --------------------------
 NetworkDns.kt
-Use this class to implement DNS. Should use the cellular network to resolve the IP of the hostname (in wifi case). Prior ipv4 over ipv6
+Use this class to resolve the hostname through the selected cellular network when Wi-Fi is also active.
 --------------------------
 import android.net.Network
 import android.os.Build
@@ -315,27 +340,19 @@ class NetworkDns private constructor() : Dns {
    override fun lookup(hostname: String): List<InetAddress> {
        return if (mNetwork != null && Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
            try {
-                val inetAddressList: MutableList<InetAddress> = ArrayList()
-                val inetAddresses = mNetwork!!.getAllByName(hostname)
-                for (inetAddress in inetAddresses) {
-                    if (inetAddress is Inet4Address) {
-                        inetAddressList.add(0, inetAddress)
-                    } else {
-                        inetAddressList.add(inetAddress)
-                    }
-                }
-                inetAddressList
+                // Preserve the DNS resolver's original IPv4/IPv6 address order.
+                mNetwork!!.getAllByName(hostname).toList()
             } catch (ex: NullPointerException) {
                 try {
                     Dns.SYSTEM.lookup(hostname)
                 } catch (e: UnknownHostException) {
-                    Arrays.asList(*InetAddress.getAllByName(hostname))
+                    InetAddress.getAllByName(hostname).toList()
                 }
             } catch (ex: UnknownHostException) {
                 try {
                     Dns.SYSTEM.lookup(hostname)
                 } catch (e: UnknownHostException) {
-                    Arrays.asList(*InetAddress.getAllByName(hostname))
+                    InetAddress.getAllByName(hostname).toList()
                 }
             }
        } else Dns.SYSTEM.lookup(hostname)
