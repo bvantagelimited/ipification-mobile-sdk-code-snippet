@@ -293,11 +293,7 @@ class CellularConnection {
          // terminal callback and returns it in the response body. The caller can then parse
          // the authorization code and state without opening the redirect URI in a browser.
          httpBuilder.addNetworkInterceptor(
-            HandleRedirectInterceptor(
-                context,
-                authRequest.getUrl(),
-                authRequest.mRedirectUri.toString()
-            )
+            HandleRedirectInterceptor(authRequest.mRedirectUri.toString())
          )
 
 
@@ -403,50 +399,75 @@ class NetworkDns private constructor() : Dns {
 }
 ```
 
-```
---------------------------
-HandleRedirectInterceptor.kt (need to implement in case handling redirect urls)
+#### `HandleRedirectInterceptor.kt`
 
-By default,OKHttp3 automatically follow Redirect (followSslRedirects(true),followRedirects(true)). We just need to check and return the response if the location url starts with the `redirect_uri`
---------------------------
+OkHttp normally follows HTTP redirects automatically. Add this as a **network interceptor** so
+it can inspect each redirect response before OkHttp follows it. Intermediate telco redirects
+are returned unchanged and continue normally. A redirect matching the registered client
+`redirect_uri` is captured as the terminal authentication result.
 
-import android.content.Context
-import android.os.Build
-import android.util.Log
-import okhttp3.*
+```kotlin
+import android.net.Uri
+import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 
-
-
-class HandleRedirectInterceptor(ctx: Context, requestUrl: String, redirect_uri: String) : Interceptor {
-    private var redirectUri: String = redirect_uri
-    private var url: String = requestUrl
+class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
+    private val expectedRedirectUri = Uri.parse(redirectUri).also { uri ->
+        require(!uri.scheme.isNullOrBlank()) { "redirectUri must include a URI scheme" }
+    }
 
     override fun intercept(chain: Interceptor.Chain): Response {
+        val response = chain.proceed(chain.request())
 
-        val request: Request = chain.request()
-        val response: Response = chain.proceed(request)
-        // check and return success response if location match with defined redirect-uri
-        if (response.code in 300.. 399){
-           if ((response.headers["location"] != null && response.headers["location"]!!.startsWith(redirectUri))
-                  || (response.headers["Location"] != null && response.headers["Location"]!!.startsWith(redirectUri)))
-               {
-                  val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
-                  val contentType: MediaType? = response.body!!.contentType()
-
-                  val locationRes = response.headers["location"] ?: response.headers["Location"] ?: ""
-                  val body = locationRes.toResponseBody(contentType)
-                  builder.code(200).message("success").body(body)
-                  // close the response body to avoid exception
-                  response.body?.close()
-                  return builder.build()
-               }
+        // OkHttp header lookup is case-insensitive, so one lookup handles Location/location.
+        val location = response.header("Location")
+        if (!response.isRedirect || location == null || !isTerminalRedirect(location)) {
+            // Keep intermediate redirects unchanged so OkHttp can follow them using the same
+            // cellular-bound client, socket factory, DNS resolver, cookies, and headers.
+            return response
         }
-        return response
+
+        // Replace only the terminal redirect body and preserve the original request, protocol,
+        // headers, timestamps, TLS handshake, and other response metadata.
+        val terminalResponse = response.newBuilder()
+            .code(200)
+            .message("Terminal redirect captured")
+            .removeHeader("Location")
+            .body(location.toResponseBody("text/plain; charset=utf-8".toMediaType()))
+            .build()
+
+        // The original body is no longer returned and must be closed to avoid leaking a socket.
+        response.close()
+        return terminalResponse
+    }
+
+    private fun isTerminalRedirect(location: String): Boolean {
+        val actualUri = Uri.parse(location)
+
+        // Compare URI components instead of using startsWith(), which can incorrectly accept
+        // a different callback such as "myapp://callback.attacker". Query parameters are not
+        // compared because the terminal URI adds dynamic values such as `code` and `state`.
+        if (actualUri.isOpaque || expectedRedirectUri.isOpaque) {
+            return actualUri.isOpaque == expectedRedirectUri.isOpaque &&
+                actualUri.scheme.equals(expectedRedirectUri.scheme, ignoreCase = true) &&
+                actualUri.schemeSpecificPart.substringBefore('?') ==
+                    expectedRedirectUri.schemeSpecificPart.substringBefore('?')
+        }
+
+        return actualUri.scheme.equals(expectedRedirectUri.scheme, ignoreCase = true) &&
+            actualUri.authority.equals(expectedRedirectUri.authority, ignoreCase = true) &&
+            actualUri.path.orEmpty() == expectedRedirectUri.path.orEmpty()
     }
 }
-
 ```
+
+Register it with `addNetworkInterceptor()`, as shown above. After receiving the captured URL,
+parse its query parameters and verify that `state` matches the value generated at the start of
+the flow before accepting the authorization `code`. If onboarding permits wildcard redirect
+URIs, replace `isTerminalRedirect()` with an explicit matcher for the approved wildcard pattern;
+do not fall back to unrestricted string-prefix matching.
 
 More detail: [`IPificationService.kt`](../examples/android/request-scoped/IPificationService.kt)
 
