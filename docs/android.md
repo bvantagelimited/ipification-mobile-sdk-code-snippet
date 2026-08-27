@@ -599,6 +599,9 @@ private fun finishCellularWork() {
 }
 ```
 
+A runnable project is available at
+[`samples/android/process-binding-ip-check`](../samples/android/process-binding-ip-check/README.md).
+
 ### License
 
 
