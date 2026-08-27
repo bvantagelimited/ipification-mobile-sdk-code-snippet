@@ -1,0 +1,808 @@
+package com.ipification.demoapp.manager
+
+import android.annotation.TargetApi
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.Uri
+import android.net.wifi.WifiManager
+import android.os.AsyncTask
+import android.os.Build
+import android.os.Build.VERSION_CODES
+import android.util.Base64
+import android.util.Log
+import android.util.Patterns
+import androidx.annotation.RequiresApi
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.Dns
+import okhttp3.HttpUrl
+import okhttp3.Interceptor
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier
+import org.json.JSONObject
+import java.io.BufferedInputStream
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.lang.Exception
+import java.lang.reflect.Method
+import java.net.HttpURLConnection
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.URL
+import java.net.UnknownHostException
+import java.security.SecureRandom
+import java.util.Timer
+import java.util.TimerTask
+import java.util.concurrent.TimeUnit
+import javax.net.ssl.HttpsURLConnection
+import java.net.Inet6Address
+import java.net.URLEncoder
+
+
+/**
+ * CODE SNIPPET FOR IMPLEMENTING IPIFICATION ON ANDROID
+ *
+ * This service handles seamless mobile authentication by leveraging the cellular network identity,
+ * enabling passwordless verification without SMS or additional user actions.
+
+ * IPificationService class handles the network requests for coverage and authentication.
+ * It constructs the necessary URLs with the required parameters and makes requests to the IPification API.
+ * The class includes functions to perform coverage requests and authentication requests.
+ * It also includes helper functions to construct URLs, generate random states, and extract parameters from responses.
+
+ * 📱 Network Requirements:
+ * - Requires active cellular connection (3G/4G/5G)
+ * - Operates with or without concurrent WiFi connectivity
+ * - Automatically manages network routing through cellular transport
+
+ * 📋 Required Permissions:
+ * - android.permission.INTERNET
+ * - android.permission.ACCESS_NETWORK_STATE
+ * - android.permission.CHANGE_NETWORK_STATE
+ * - android.permission.ACCESS_WIFI_STATE
+ *
+ * 📚 Dependencies:
+ * - OkHttp (com.squareup.okhttp3:okhttp) for network requests
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+
+ * ⚠️ Cleartext HTTP Support:
+ * ../../../docs/android.md#cleartext-http-support
+ */
+
+
+class IPificationService {
+    private var coverageRequesting: Boolean = false
+    private var authRequesting: Boolean = false
+    private val TAG: String = "IPificationService"
+    var environment = "live" // or "sanbox"
+    var log = ""
+    // Check Coverage to see if the phone number and active telco are supported or not.
+    fun performCoverageRequest(
+        context: Context,
+        env: String,
+        phoneNumber: String?,
+        clientID: String,
+        redirectUri: String,
+        callback: IPCallback
+    ) {
+        Log.d(TAG, "performCoverageRequest...")
+        environment = env
+        val coverageURLString = getCoverageURL(environment)
+
+        if (clientID.isEmpty()) {
+            Log.e(TAG, "clientID is null or empty")
+            log += "clientID is null or empty \n"
+            return
+        }
+
+
+        if (phoneNumber.isNullOrEmpty()) {
+            Log.e(TAG, "phoneNumber is null or empty")
+            log += "phoneNumber is null or empty \n"
+            return
+        }
+
+        if (coverageRequesting) {
+            Log.e(TAG, "requesting .... ignored")
+            log += "requesting .... ignored \n"
+            return
+        }
+        coverageRequesting = true
+
+        // Create an instance of IPificationCoreService and connect to the coverage URL
+        val ipService = IPificationCoreService(null)
+
+        // Construct the coverage URL with query parameters
+        // - coverageURLString: The base URL for the coverage service
+        // - clientID: The unique identifier for the client making the request
+        // - phoneNumber: The phone number for which coverage information is being requested
+        // These parameters are appended to the base URL as query parameters to form the final request URL
+        val coverageUrlWithParams = "$coverageURLString?client_id=$clientID&phone=$phoneNumber"
+
+        ipService.connectTo(context, coverageUrlWithParams, APIType.COVERAGE, object : IPCallback {
+            override fun onSuccess(response: String) {
+                Log.d(TAG, response)
+                coverageRequesting = false
+                // Handle the success response
+                // Supported telco
+                // TODO: Start authentication with the phone number
+                performAuthenticationRequest(context, phoneNumber, clientID, redirectUri, callback)
+            }
+
+            override fun onFailure(error: String) {
+                Log.e(TAG, "checkCoverage error: $error")
+                coverageRequesting = false
+                // Handle the failure response
+                // Unsupported telco or error
+                // TODO: Fallback to SMS flow
+                callback.onFailure(error)
+            }
+        })
+    }
+
+    // perform authentication
+    fun performAuthenticationRequest(
+        context: Context,
+        phoneNumber: String,
+        clientID: String,
+        redirectUri: String,
+        callback: IPCallback
+    ) {
+        Log.d(TAG, "performAuthenticationRequest...")
+        val authURLString = getAuthURL(environment)
+
+        if (clientID.isEmpty()) {
+            Log.e(TAG, "clientID is null or empty")
+            return
+        }
+
+        if (redirectUri.isEmpty()) {
+            Log.e(TAG, "redirectUri is null or empty")
+            return
+        }
+
+        if (phoneNumber.isEmpty()) {
+            Log.e(TAG, "phoneNumber is null or empty")
+            return
+        }
+
+        // Prevent multiple clicks
+        if (authRequesting) {
+            Log.e(TAG, "auth requesting .... ignored")
+            return
+        }
+        authRequesting = true
+
+        // Create an instance of IPificationCoreService and connect to the auth URL
+        val ipService = IPificationCoreService(redirectUri)
+        val randomState = generateState()
+
+        // Construct the URL with parameters for authentication
+        // - authURLString: The base URL for the authentication service
+        // - clientID: The unique identifier for the client making the request
+        // - redirectUri: The URI to redirect to after authentication
+        // - phoneNumber: A hint for the login process, typically the user's phone number
+        // - response_type=code: Indicates that the response will include an authorization code
+        // - scope=openid ip:phone_verify: Specifies the scopes of the request, including OpenID and phone verification
+        // - randomState: A randomly generated string to maintain state between the request and callback
+        // These parameters are appended to the base URL using a StringBuilder to form the final authentication URL
+        fun encode(value: String) = URLEncoder.encode(value, "UTF-8")
+        val consentId = "" // consent_id and consent_timestamp are for XL only. default is ipconsent001eng
+        val unixTime = System.currentTimeMillis() / 1000L
+        val authUrlWithParams = StringBuilder(authURLString).apply {
+            append("?client_id=").append(encode(clientID))
+            append("&redirect_uri=").append(encode(redirectUri))
+            append("&login_hint=").append(encode(phoneNumber))
+            append("&response_type=code")
+            append("&scope=").append(encode("openid ip:phone_verify"))
+            append("&state=").append(encode(randomState))
+            append("&consent_id=").append(encode(consentId))
+            append("&consent_timestamp=").append(unixTime)
+        }.toString()
+
+        ipService.connectTo(context, authUrlWithParams, APIType.AUTH, object : IPCallback {
+            override fun onSuccess(response: String) {
+                Log.d(TAG, response)
+                authRequesting = false
+                // Handle the success response
+                // Extract code and state from the response
+                val code = getParam("code", response)
+                val state = getParam("state", response)
+                Log.d(TAG, "$state -  $code")
+                if (code != null) {
+                    // TODO: Call TokenExchange to check {code}
+                    Log.d(TAG, "code value: $code")
+                    callback.onSuccess(response)
+                } else {
+                    // TODO: Fallback to SMS flow
+                    callback.onFailure(response)
+                }
+            }
+
+            override fun onFailure(error: String) {
+                authRequesting = false
+                Log.e(TAG, "auth error: $error")
+                // Handle the failure response
+                // TODO: Fallback to SMS flow
+                callback.onFailure(error)
+            }
+        })
+    }
+
+    /**
+     * Constructs the coverage URL string based on the provided environment.
+     *
+     * @param environment The environment for the URL, either "live" or "stage".
+     * @return The constructed coverage URL string.
+     */
+    private fun getCoverageURL(environment: String): String {
+        val baseUrl = when (environment) {
+            "live" -> "https://api.ipification.com"
+            else -> "https://api.stage.ipification.com"
+        }
+        return "$baseUrl/auth/realms/ipification/coverage"
+    }
+
+    /**
+     * Constructs the authentication URL string based on the provided environment.
+     *
+     * @param environment The environment for the URL, either "live" or "stage".
+     * @return The constructed authentication URL string.
+     */
+    private fun getAuthURL(environment: String): String {
+        val baseUrl = when (environment) {
+            "live" -> "https://api.ipification.com"
+            else -> "https://api.stage.ipification.com"
+        }
+        return "$baseUrl/auth/realms/ipification/protocol/openid-connect/auth"
+    }
+
+    // Generate a random state string with a length of 16 characters
+    private fun generateState(): String {
+        val STATE_LENGTH = 16
+        val sr = SecureRandom()
+        val random = ByteArray(STATE_LENGTH)
+        sr.nextBytes(random)
+        var result = Base64.encodeToString(random, Base64.NO_WRAP or Base64.NO_PADDING or Base64.URL_SAFE)
+        if (result.length > STATE_LENGTH) {
+            result = result.substring(0, STATE_LENGTH)
+        }
+        return "ip-sdk-$result"
+    }
+
+    // Extract a query parameter value from the response body
+    fun getParam(dataKey: String, responseBody: String): String? {
+        return try {
+            val data = Uri.parse(responseBody)
+            if (data.isHierarchical) {
+                data.getQueryParameter(dataKey)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+}
+
+
+
+
+enum class APIType {
+    COVERAGE,
+    AUTH
+}
+
+interface IPCallback {
+    fun onSuccess(response: String)
+    fun onFailure(error: String)
+}
+
+interface IPCallbackv4 {
+    fun onSuccess(response: String)
+    fun onRedirect(url: String)
+    fun onFailure(error: String)
+}
+class IPificationCoreService(redirectUri: String?) {
+    private val CONNECT_NETWORK_TIMEOUT : Long = 5000L
+    private val TAG: String = "IPificationCoreService"
+    private var mRedirectUri: String? = redirectUri
+    private val cookieJar: CookieJar = InMemoryCookieJar()
+
+    private lateinit var mRequestUrl : String
+    private var mCallback : IPCallback? = null
+    private var mApiType : APIType = APIType.COVERAGE
+    fun connectTo(context: Context, urlString: String, apiType: APIType, callback: IPCallback) {
+
+        // validation
+        if (mApiType == APIType.AUTH && mRedirectUri.isNullOrEmpty()) {
+            Log.e(TAG, "Error: The REDIRECT_URI is invalid or empty. Please provide a valid redirect URI.")
+            callback.onFailure("The REDIRECT_URI is invalid or empty. Please provide a valid redirect URI.")
+            return
+        }
+        // Parse the URL
+        if (!isValidUrl(urlString)) {
+            callback.onFailure("Request URL is not valid")
+            return
+        }
+
+        if(!isMobileDataEnabled(context)){
+            callback.onFailure("Mobile data is turned off.")
+            return
+        }
+
+        this.mApiType = apiType
+        this.mRequestUrl = urlString
+        this.mCallback = callback
+
+        // start force cellular network
+        if (Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+            requestCellularNetwork(context)
+        } else {
+            callback.onFailure("unsupported android versions under 5.0")
+        }
+    }
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun requestCellularNetwork(context: Context) {
+        Log.d(TAG, "requestCellularNetwork...")
+        // 1. force network connection via cellular interface
+        // If your app supports Android 21+, you need to implement handling timeout manually.
+        // Android 21++ support requestNetwork (NetworkRequest request,
+        //                ConnectivityManager.NetworkCallback networkCallback)
+        // Android 26++ support requestNetwork(NetworkRequest request,
+        //                ConnectivityManager.NetworkCallback networkCallback,
+        //                int timeoutMs)
+        // https://developer.android.com/reference/android/net/ConnectivityManager#requestNetwork(android.net.NetworkRequest,%20android.net.ConnectivityManager.NetworkCallback)
+
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            var isReceiveResponse = false
+            connectivityManager.requestNetwork(
+                request,
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        Log.d(TAG, "onAvailable...")
+                        if(isReceiveResponse == true){
+                            // already received callback
+                            return
+                        }
+                        isReceiveResponse = true
+                        processRequestWithNetwork(network)
+                    }
+
+                    override fun onUnavailable() {
+                        // cellular network is not available, call the callback error
+                        Log.e(TAG, "onUnavailable: Could not established cellular connection")
+                        if(isReceiveResponse == true){
+                            // already received callback
+                            return
+                        }
+                        isReceiveResponse = true
+                        handleUnAvailableCase()
+                    }
+                },
+                CONNECT_NETWORK_TIMEOUT.toInt() // CONNECT_NETWORK_TIMEOUT
+            )
+        } else {
+            // manual adding timeout
+            var isReceiveResponse = false
+            connectivityManager.requestNetwork(
+                request,
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        isReceiveResponse = true
+                        processRequestWithNetwork(network)
+                    }
+
+                    override fun onUnavailable() {
+                        isReceiveResponse = true
+                        // cellular network is not available, callback
+                        Log.e(TAG, "onUnavailable: Could not established cellular connection")
+                        handleUnAvailableCase()
+                    }
+                }
+            )
+            Timer().schedule(object : TimerTask() {
+                override fun run() {
+                    Log.d(TAG, "timeout isReceiveResponse=${isReceiveResponse} ")
+                    if (!isReceiveResponse) {
+                        handleUnAvailableCase()
+                    }
+                }
+            }, CONNECT_NETWORK_TIMEOUT)
+        }
+    }
+
+    /**
+     * This function processes the request using the provided Network object.
+     *
+     * @param network The network object used to process the request.
+     */
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    private fun processRequestWithNetwork(network: Network) {
+        Log.d(TAG, "processRequestWithNetwork...")
+        // Add the implementation for processing the request with the network
+        // using OkHTTP library to make the connection
+        val httpBuilder = OkHttpClient.Builder()
+        // enable socket for network
+        httpBuilder.socketFactory(network.socketFactory)
+
+        // add dns
+        if (network != null && !isIPEndpoints(mRequestUrl)) {
+            // enable DNS resolver with cellular network
+            // enable dns based on cellular network
+            val dns = NetworkDns.instance
+            dns.setNetwork(network)
+            httpBuilder.dns(dns)
+        }
+
+        // handle cookie (for special market telcos: RU,UK)
+        httpBuilder.cookieJar(cookieJar)
+
+        //check and handle the response with redirect_uri
+        if(mApiType == APIType.AUTH){
+            httpBuilder.addNetworkInterceptor(
+                HandleRedirectInterceptor(
+                    mRedirectUri!!
+                )
+            )
+        }
+
+
+        httpBuilder.connectTimeout(
+            10000,
+            TimeUnit.MILLISECONDS
+        ) // connect timeout
+        httpBuilder.readTimeout(
+            10000,
+            TimeUnit.MILLISECONDS
+        )    // read timeout
+
+        val httpClient = httpBuilder.build()
+
+        val okHttpRequestBuilder = Request.Builder()
+        //url
+        okHttpRequestBuilder.url(mRequestUrl)
+
+        val okHttpRequest: Request = okHttpRequestBuilder
+            .build()
+        httpClient.newCall(okHttpRequest).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                // handle the response
+                parseResponse(network, response)
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, ("httpClient - onFailure: " + e.message ))
+                e.printStackTrace()
+                mCallback?.onFailure(e.message ?: "something went wrong")
+                mCallback = null
+
+            }
+        })
+    }
+
+    @RequiresApi(VERSION_CODES.LOLLIPOP)
+    private fun parseResponse(network: Network, response: Response) {
+        Log.d(TAG, "parseResponse...")
+        if(response.isRedirect){
+            val isRedirect = handleRedirectResponse(network, response)
+            if (isRedirect){
+                return
+            }
+        }
+
+        if(response.isSuccessful){
+            when (mApiType) {
+                APIType.COVERAGE -> handleCoverageResponse(response)
+                APIType.AUTH -> handleAuthResponse(response)
+                else -> handleAuthResponse(response)
+            }
+
+        }else if(response.code in(300..310)){
+            handleAuthResponse(response)
+        }
+        else { // error
+            handleErrorResponse(response)
+        }
+    }
+
+    private fun handleAuthResponse(response: Response) {
+        try{
+            val responseBody = response.body!!.string()
+            val data = Uri.parse(responseBody)
+            if(data.isHierarchical){
+                val code =  if (data.getQueryParameter("code") != null) data.getQueryParameter("code") else null
+                if(!code.isNullOrEmpty()){
+                    mCallback?.onSuccess(responseBody)
+                    mCallback = null
+                } else {
+                    mCallback?.onFailure(responseBody)
+                    mCallback = null
+                }
+            } else {
+                mCallback?.onFailure(responseBody)
+                mCallback = null
+            }
+
+        }catch (e: Exception){
+            e.printStackTrace()
+            mCallback?.onFailure(e.message ?: "something went wrong")
+            mCallback = null
+        }
+    }
+
+    private fun handleCoverageResponse(response: Response) {
+        try{
+            val responseBody = response.body!!.string()
+
+            val json = JSONObject(responseBody.toString())
+            if(json.has("available")) {
+                val available = json.getBoolean("available")
+                if(available){
+                    mCallback?.onSuccess(responseBody)
+                } else {
+                    mCallback?.onFailure(responseBody)
+                }
+                mCallback = null
+
+            }
+        }catch (e: Exception){
+            e.printStackTrace()
+            mCallback?.onFailure("${e.message}")
+            mCallback = null
+        }
+    }
+
+    /**
+     * Handles error response
+     * @param response The HTTP response received.
+     */
+    private fun handleErrorResponse(response: Response) {
+        try{
+            val responseBody = response.body!!.string()
+            mCallback?.onFailure(responseBody)
+            mCallback = null
+
+        }catch (e: Exception){
+            e.printStackTrace()
+            mCallback?.onFailure(e.message ?: "something went wrong")
+            mCallback = null
+        }
+    }
+
+    /**
+     * Handles the redirect response by extracting the 'Location' header.
+     *
+     * @param response The HTTP response received.
+     * @return An AuthResponse object containing the response code, location, and headers.
+     */
+    @RequiresApi(VERSION_CODES.LOLLIPOP)
+    private fun handleRedirectResponse(network: Network, response: Response) : Boolean {
+        Log.d(TAG, "handleRedirectResponse...")
+
+        // Try to get the 'Location' header (case insensitive)
+        val locationUrl = response.header("Location") ?: response.header("location")
+
+        // Check if the location URL is valid and starts with "http" but not with the defined redirect URI
+        if (mRedirectUri != null && locationUrl != null && locationUrl.startsWith("http") && !locationUrl.startsWith(mRedirectUri!!)) {
+            mRequestUrl = locationUrl
+            processRequestWithNetwork(network)
+            return true
+        }
+        return false
+    }
+
+    /**
+     * This function handles the case when the network is unavailable.
+     */
+    private fun handleUnAvailableCase() {
+        // Add the implementation for handling the unavailable network case
+        mCallback?.onFailure("onUnavailable: Failed to request network. Timeout error")
+        mCallback = null
+    }
+
+
+    /**
+     * Checks if the provided URL string is a valid URL.
+     *
+     * @param urlString The URL string to validate.
+     * @return True if the URL is valid, false otherwise.
+     */
+    private fun isValidUrl(urlString: String): Boolean {
+        return Patterns.WEB_URL.matcher(urlString).matches()
+    }
+
+
+
+    internal fun isMobileDataEnabled(context: Context): Boolean {
+        val cm =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        try {
+            val cmClass = Class.forName(cm.javaClass.name)
+            val method: Method = cmClass.getDeclaredMethod("getMobileDataEnabled")
+            method.isAccessible = true // Make the method callable
+            // get the setting for "mobile data"
+            val res = method.invoke(cm)
+            if (res is Boolean) {
+                return res
+            }
+        } catch (e: java.lang.Exception) {
+            Log.e(TAG, e.message ?: "")
+            return true
+        }
+        return true
+    }
+
+    fun isWifiEnabled(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = connectivityManager.activeNetwork
+            val capabilities = connectivityManager.getNetworkCapabilities(network)
+            capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+        } else {
+            @Suppress("DEPRECATION")
+            val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION")
+            networkInfo?.type == ConnectivityManager.TYPE_WIFI && networkInfo.isConnected
+        }
+    }
+
+    // functions to check if endpoint is IPification's server or not
+    private fun isIPEndpoint(requestUri: String): Boolean {
+        val host = try {
+            URI(requestUri).host?.lowercase()
+        } catch (e: Exception) {
+            null
+        } ?: return false
+
+        val result = host == "ipification.com" || host.endsWith(".ipification.com")
+        return result
+    }
+}
+
+class NetworkDns private constructor() : Dns {
+    private var mNetwork: Network? = null
+    fun setNetwork(network: Network?) {
+        mNetwork = network
+    }
+
+    @Throws(UnknownHostException::class)
+    override fun lookup(hostname: String): List<InetAddress> {
+        return if (mNetwork != null && Build.VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
+            try {
+                val inetAddressList: MutableList<InetAddress> = ArrayList()
+                val inetAddresses = mNetwork!!.getAllByName(hostname)
+                for (inetAddress in inetAddresses) {
+                    // priority ipv6 first
+                    if (inetAddress is Inet6Address) {
+                        inetAddressList.add(0, inetAddress)
+                    } else {
+                        inetAddressList.add(inetAddress)
+                    }
+                }
+                inetAddressList
+            } catch (ex: NullPointerException) {
+                try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    listOf(*InetAddress.getAllByName(hostname))
+                }
+            } catch (ex: UnknownHostException) {
+                try {
+                    Dns.SYSTEM.lookup(hostname)
+                } catch (e: UnknownHostException) {
+                    listOf(*InetAddress.getAllByName(hostname))
+                }
+            }
+        } else Dns.SYSTEM.lookup(hostname)
+    }
+
+    companion object {
+        private var sInstance: NetworkDns? = null
+        val instance: NetworkDns
+            get() {
+                if (sInstance == null) {
+                    sInstance = NetworkDns()
+                }
+                return sInstance!!
+            }
+    }
+}
+
+class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
+    private val TAG: String = "RedirectInterceptor"
+    private var mRedirectUri: String = redirectUri
+
+    override fun intercept(chain: Interceptor.Chain): Response {
+
+        val request: Request = chain.request()
+        Log.d(TAG, "url: ${request.url}" )
+        val t1 = System.nanoTime()
+        Log.d(TAG,
+            java.lang.String.format(
+                "--> Sending request %s on %s%n%s",
+                request.url,
+                chain.connection(),
+                request.headers
+            )
+        )
+        val response = chain.proceed(request)
+        // Check if the response is a redirect (HTTP 3xx status code)
+        if (response.code in 300.. 399){
+            val locationHeader = response.header("location") ?: response.header("Location")
+
+            // Check if the location header starts with the defined redirectUri
+            if (locationHeader != null && locationHeader.startsWith(mRedirectUri)) {
+                // Build a new successful response with HTTP 200 status code
+                val builder: Response.Builder = Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
+
+                val contentType: MediaType? = response.body?.contentType()
+                val body = locationHeader.toResponseBody(contentType)
+                builder.code(200).message("success").body(body)
+
+                // Close the original response body to avoid exceptions
+                response.body?.close()
+
+                return builder.build()
+            }
+        }
+        return response
+    }
+}
+
+/**
+ * Stores cookies in memory for a single SDK flow. Matching is delegated to
+ * OkHttp's cookie rules so host-only, parent-domain, and path-restricted
+ * cookies behave consistently across follow-up requests.
+ */
+private class InMemoryCookieJar : CookieJar {
+    private val lock = Any()
+    private val cookies = mutableListOf<Cookie>()
+
+    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        val now = System.currentTimeMillis()
+
+        synchronized(lock) {
+            this.cookies.removeAll { it.expiresAt <= now }
+
+            cookies.forEach { cookie ->
+                this.cookies.removeAll { storedCookie ->
+                    storedCookie.name == cookie.name &&
+                        storedCookie.domain == cookie.domain &&
+                        storedCookie.path == cookie.path
+                }
+
+                if (cookie.expiresAt > now) {
+                    this.cookies.add(cookie)
+                }
+            }
+        }
+    }
+
+    override fun loadForRequest(url: HttpUrl): List<Cookie> {
+        val now = System.currentTimeMillis()
+
+        synchronized(lock) {
+            cookies.removeAll { it.expiresAt <= now }
+            return cookies.filter { it.matches(url) }
+        }
+    }
+}

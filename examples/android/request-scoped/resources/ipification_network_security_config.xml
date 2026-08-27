@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Compatibility copy. The maintained file is:
-    examples/android/request-scoped/resources/ipification_network_security_config.xml
--->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <!-- Tri (Indonesia), Telcel (Mexico), Vodafone Idea India -->
@@ -14,14 +10,18 @@
         <!-- SmartFren (Indonesia) -->
         <domain includeSubdomains="true">smartfren.com</domain>
 
+        <!-- ADL Digital Services (Thailand) (changed to https) -->
+        <!-- <domain includeSubdomains="true">adldigitalservice.com</domain> -->
+
         <!-- EnStream (Canadian mobile identity provider) -->
         <domain includeSubdomains="true">enstreamidentity.com</domain>
 
-        <!-- SmartDigits (TRUID): O2 (UK) -->
+        <!-- SmartDigits (TRUID): O2 (UK)-->
         <domain includeSubdomains="true">smartdigits.io</domain>
 
         <!-- Vodafone (UK) -->
         <domain includeSubdomains="true">vodafone.com</domain>
+
 
         <!-- Argentina -->
         <domain includeSubdomains="true">openxpand.com</domain>
