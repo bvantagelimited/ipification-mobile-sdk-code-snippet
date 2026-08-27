@@ -446,7 +446,7 @@ class HandleRedirectInterceptor(redirectUri: String) : Interceptor {
         // headers, timestamps, TLS handshake, and other response metadata.
         val terminalResponse = response.newBuilder()
             .code(200)
-            .message("Terminal redirect captured")
+            .message("success")
             .removeHeader("Location")
             .body(location.toResponseBody("text/plain; charset=utf-8".toMediaType()))
             .build()
