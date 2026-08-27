@@ -541,23 +541,16 @@ private fun stopForcingWholeAppToCellular(
 > `bindProcessToNetwork(null)`, then unregister the same `NetworkCallback` originally passed to
 > `requestNetwork()`.
 
-The lifecycle-safe `ProcessCellularBinding` class wraps these operations as `bind()` and
-`unbind()`. Clients should normally use that class rather than manage the callback directly.
+We provide a sample helper named
+[`ProcessCellularBinding`](../examples/android/process-scoped/ProcessCellularBinding.kt). Copy
+this class into the client application. It requests the cellular network, binds the app process,
+handles the shared `NetworkCallback`, and restores normal routing during cleanup. The client only
+needs to call its `bind()` and `unbind()` functions:
 
-For a login flow that uses cellular temporarily and then returns to Wi-Fi or Android's normal
-default network:
-
-1. Pause unrelated API calls, background synchronization, analytics, and downloads.
-2. Call `bind()` and wait for `onBound` before creating the login HTTP client.
-3. Perform every required login request and redirect with that new client.
-4. Wait until the final login success, failure, or cancellation callback.
-5. Stop using the login client and call `unbind()`. This calls
-   `bindProcessToNetwork(null)` and unregisters the cellular `NetworkCallback`.
-6. Create or resume normal API clients after unbinding. Their new sockets will use Android's
-   restored default network, which is normally Wi-Fi when Wi-Fi is connected.
-
-For this temporary-login scenario, Option 5.1 is usually safer because unrelated app traffic
-never leaves the default network.
+1. Call `bind()` and wait for `onBound`.
+2. Create a new HTTP client and perform all required cellular requests.
+3. After the final success, failure, or cancellation, stop the client and call `unbind()`.
+4. New connections can then use Android's normal default network again.
 
 ```kotlin
 private val cellularBinding by lazy {
@@ -605,30 +598,6 @@ private fun finishCellularWork() {
     cellularBatchStarted.set(false)
 }
 ```
-
-The complete lifecycle-safe helper is available in
-[`ProcessCellularBinding.kt`](../examples/android/process-scoped/ProcessCellularBinding.kt).
-It prevents duplicate binding, handles timeout and network loss, and makes `close()` an alias
-for `unbind()`.
-
-The example creates a dedicated `OkHttpClient` for the cellular batch and does not reuse it, so
-`connectionPool.evictAll()` is not required. If a shared client will be reused after `unbind()`,
-either recreate that client or call `client.connectionPool.evictAll()` after all active calls
-finish. Otherwise, a pooled socket created while the process was bound may continue using its
-existing cellular connection even though new sockets use Android's restored default network.
-
-Important limitations:
-
-- Process binding affects unrelated SDKs, analytics, downloads, and API clients in the same
-  process.
-- Existing sockets and pooled connections are not migrated when binding or unbinding. A client
-  created before `bind()` may keep using a Wi-Fi socket during login, while a client reused after
-  `unbind()` may keep using its cellular socket.
-- To guarantee whole-process cellular behavior during login, pause other traffic and recreate or
-  evict relevant shared-client connection pools after binding. Recreate or evict them again after
-  unbinding before resuming normal traffic.
-- Always call `unbind()` in every terminal completion, cancellation, and error path.
-- Do not let multiple components independently call `bindProcessToNetwork()`.
 
 ### License
 
