@@ -70,3 +70,10 @@ Android recommends individually bound sockets for narrow use cases. See the
 iOS has no public equivalent for changing the default network of an entire app process.
 Use `NWParameters.requiredInterfaceType = .cellular` for each controlled `NWConnection`, as
 shown in the repository's iOS request-scoped example.
+
+## Runnable verification app
+
+See the
+[`process-binding-ip-check`](../../../samples/android/process-binding-ip-check/README.md) for a
+minimal Android project that compares the public IP before binding, while the process is forced
+to cellular, and after normal routing is restored.

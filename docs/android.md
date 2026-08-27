@@ -507,6 +507,43 @@ Use this option only when every new network connection created by the applicatio
 must use cellular. Call `bind()` once before starting the batch. Create new HTTP clients and
 connections only after `onBound` is called.
 
+#### Core functions: force cellular and restore normal routing
+
+These are the two essential operations used by the complete helper below:
+
+```kotlin
+// Call only after requestNetwork() returns a cellular Network in onAvailable().
+private fun forceWholeAppToCellular(cellularNetwork: Network): Boolean {
+    // Core forcing call: all NEW sockets and DNS lookups created by this app process
+    // use the supplied cellular network. Existing connections do not move.
+    return connectivityManager.bindProcessToNetwork(cellularNetwork)
+}
+
+// Call after the FINAL required cellular request succeeds, fails, or is cancelled.
+private fun stopForcingWholeAppToCellular(
+    networkCallback: ConnectivityManager.NetworkCallback,
+) {
+    // Restore Android's normal default-network selection, usually Wi-Fi when available.
+    connectivityManager.bindProcessToNetwork(null)
+
+    // Release the cellular Network requested for this batch.
+    try {
+        connectivityManager.unregisterNetworkCallback(networkCallback)
+    } catch (_: IllegalArgumentException) {
+        // The callback may already have been released after timeout or unavailability.
+    }
+}
+```
+
+> **The line that forces the whole app process to cellular is
+> `connectivityManager.bindProcessToNetwork(cellularNetwork)`.** It affects new connections
+> created after the call succeeds. To stop forcing cellular, first call
+> `bindProcessToNetwork(null)`, then unregister the same `NetworkCallback` originally passed to
+> `requestNetwork()`.
+
+The lifecycle-safe `ProcessCellularBinding` class wraps these operations as `bind()` and
+`unbind()`. Clients should normally use that class rather than manage the callback directly.
+
 For a login flow that uses cellular temporarily and then returns to Wi-Fi or Android's normal
 default network:
 

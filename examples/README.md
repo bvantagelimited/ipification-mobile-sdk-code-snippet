@@ -6,3 +6,5 @@
   the Android app process through cellular. Use only when the whole process must be bound.
 - [`ios/request-scoped`](ios/request-scoped/README.md): create cellular-only connections with
   Apple's Network framework. iOS has no public whole-process equivalent.
+
+Complete runnable applications are kept separately under [`../samples`](../samples/README.md).

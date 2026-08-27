@@ -9,6 +9,7 @@ Using WiFi is more complicated when trying to use IPification Authentication. By
 | [`examples/android/request-scoped`](examples/android/request-scoped/README.md) | Recommended Android cellular request example |
 | [`examples/android/process-scoped`](examples/android/process-scoped/README.md) | Advanced Android whole-process cellular binding |
 | [`examples/ios/request-scoped`](examples/ios/request-scoped/README.md) | iOS cellular `NWConnection` example |
+| [`samples/android/process-binding-ip-check`](samples/android/process-binding-ip-check/README.md) | Runnable Android whole-process routing verification app |
 | [`docs`](docs) | Platform integration and configuration guides |
 | [`im-authentication/android`](im-authentication/android/README.md) | Android IM authentication example |
 | [`device-info`](device-info/README.md) | SIM and mobile-network device information snippets |
@@ -89,6 +90,7 @@ remains the recommended approach for IPification.
 
 - [Process-scoped cellular example](examples/android/process-scoped/README.md)
 - [ProcessCellularBinding.kt](examples/android/process-scoped/ProcessCellularBinding.kt)
+- [Runnable process-binding verification app](samples/android/process-binding-ip-check/README.md)
 
 ## iOS
 
