@@ -1,4 +1,5 @@
-# Whole-app cellular IP verification app
+# Whole-app cellular IP demo app
+<img width="300" height="700" alt="Screenshot_20260827_214803" src="https://github.com/user-attachments/assets/c3388c9f-99b0-4eca-8853-904057a86ca3" />
 
 This minimal Android app calls
 [`https://api.ipify.org?format=json`](https://api.ipify.org?format=json) three times:
