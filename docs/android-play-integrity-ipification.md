@@ -135,10 +135,9 @@ Reuse the endpoint and prepared token provider. Do not reuse an integrity token,
 
 ## Security rules
 
-- Keep Google service-account credentials, IPification client secrets, and state-signing keys on the backend.
-- Never generate signed state in the app.
-- Never log integrity tokens, authorization codes, signed state, or full callback URLs.
-- Bind the attempt, integrity result, signed state, and IPification completion to the same client session.
-- Treat signed state as transaction correlation. It does not prove that the later IPification request came from the same physical device.
+- Keep all credentials, secrets, signing keys, and state generation on the backend.
+- Bind the integrity check and IPification flow to the same session and attempt.
+- Make every token and signed state short-lived and single-use.
+- Never log integrity tokens, authorization codes, or signed state.
 
 Google references: [setup](https://developer.android.com/google/play/integrity/setup) and [integrity verdicts](https://developer.android.com/google/play/integrity/verdicts).
