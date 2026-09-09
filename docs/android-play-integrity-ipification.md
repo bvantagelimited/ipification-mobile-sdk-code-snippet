@@ -21,13 +21,13 @@ sequenceDiagram
     participant Backend as Client Backend
     participant IP as IPification
 
-    App->>Backend: Create attempt for IPIFICATION_START
+    App->>Backend: Create attempt for IPIFICATION_AUTH
     Backend-->>App: attemptId + challenge
     App->>Google: Request integrityToken for this attempt
     Google-->>App: integrityToken
 
     App->>Backend: Verify integrityToken
-    Note right of App: POST /security/integrity/verify?action=IPIFICATION_START
+    Note right of App: POST /security/integrity/verify?action=IPIFICATION_AUTH
     Backend->>Google: Decode and verify token
     Google-->>Backend: Integrity verdict
 
@@ -64,7 +64,7 @@ See Google's [Standard API guide](https://developer.android.com/google/play/inte
 The app calls a shared Client Backend API immediately before starting IPification:
 
 ```http
-POST /security/integrity/verify?action=IPIFICATION_START
+POST /security/integrity/verify?action=IPIFICATION_AUTH
 Content-Type: application/json
 
 {
