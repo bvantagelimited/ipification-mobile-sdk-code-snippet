@@ -27,7 +27,7 @@ sequenceDiagram
     Google-->>App: integrityToken
 
     App->>Backend: Verify integrityToken
-    Note right of App: POST /security/integrity/verify
+    Note right of App: POST /security/integrity/verify?action=IPIFICATION_START
     Backend->>Google: Decode and verify token
     Google-->>Backend: Integrity verdict
 
@@ -36,10 +36,10 @@ sequenceDiagram
         App->>IP: Immediately start IPification over cellular
         IP-->>App: code + state
         App->>Backend: Complete with code + state
-        Backend->>Backend: Validate state and transaction
+        Backend->>Backend: **Validate state and transaction**
         Backend->>IP: Exchange code
         IP-->>Backend: Authentication result
-        Backend-->>App: ALLOW / REVIEW / DENY
+        Backend-->>App: **ALLOW / REVIEW / DENY**
     else Integrity rejected
         Backend-->>App: Stop flow with no signed state
     end
@@ -64,12 +64,10 @@ See Google's [Standard API guide](https://developer.android.com/google/play/inte
 The app calls a shared Client Backend API immediately before starting IPification:
 
 ```http
-POST /security/integrity/verify
+POST /security/integrity/verify?action=IPIFICATION_START
 Content-Type: application/json
-Authorization: Bearer <client-session-token>
 
 {
-  "action": "IPIFICATION_START",
   "attemptId": "<attempt-id>",
   "integrityToken": "<play-integrity-token>"
 }
@@ -95,14 +93,13 @@ Example success response:
 
 The app must immediately start the IPification flow using the returned `state`. If the state expires, start again with a new attempt and a new integrity token.
 
-## 3. Complete IPification
+## 3. Complete Verification and Exchange the IPification Code
 
 IPification returns the authorization `code` and the same `state`. The app sends both to its backend in the original session:
 
 ```http
 POST /verification/complete
 Content-Type: application/json
-Authorization: Bearer <client-session-token>
 
 {
   "code": "<authorization-code>",
@@ -110,21 +107,23 @@ Authorization: Bearer <client-session-token>
 }
 ```
 
-The backend must:
+The backend must **validate the state and transaction**:
 
 - Verify the state signature, expiry, action, and session.
 - Confirm that Play Integrity passed for this transaction.
 - Reject expired, changed, or previously used transactions.
 - Exchange the code with IPification using backend credentials.
-- Apply the client's security policy and return `ALLOW`, `REVIEW`, or `DENY`.
+- Apply the client's security policy and return **ALLOW / REVIEW / DENY**.
 
 ## Using the shared integrity API for other actions
 
 The same `/security/integrity/verify` endpoint can protect other sensitive actions:
 
-```json
+```http
+POST /security/integrity/verify?action=ACCOUNT_RECOVERY
+Content-Type: application/json
+
 {
-  "action": "ACCOUNT_RECOVERY",
   "attemptId": "<attempt-id>",
   "integrityToken": "<play-integrity-token>"
 }
