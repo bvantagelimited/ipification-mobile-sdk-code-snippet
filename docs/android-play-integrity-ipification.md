@@ -36,10 +36,10 @@ sequenceDiagram
         App->>IP: Immediately start IPification over cellular
         IP-->>App: code + state
         App->>Backend: Complete with code + state
-        Backend->>Backend: **Validate state and transaction**
+        Backend->>Backend: VALIDATE STATE AND TRANSACTION
         Backend->>IP: Exchange code
         IP-->>Backend: Authentication result
-        Backend-->>App: **ALLOW / REVIEW / DENY**
+        Backend-->>App: ALLOW / REVIEW / DENY
     else Integrity rejected
         Backend-->>App: Stop flow with no signed state
     end
